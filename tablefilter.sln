@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A7BB8170-C302-4BED-A57C-1B11A1BAD289}"
+	ProjectSection(SolutionItems) = preProject
+		compile.bat = compile.bat
+		demo.htm = demo.htm
+		demosrc.htm = demosrc.htm
+		externs.js = externs.js
+		picnet.table.filter.min.js = picnet.table.filter.min.js
+		README.txt = README.txt
+		release.bat = release.bat
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{04519C84-4BF8-437D-BE06-326A43249B9D}"
+	ProjectSection(SolutionItems) = preProject
+		src\FilterState.js = src\FilterState.js
+		src\jquery.cookie.js = src\jquery.cookie.js
+		src\jQueryPlugin.js = src\jQueryPlugin.js
+		src\Options.js = src\Options.js
+		src\SearchEngine.js = src\SearchEngine.js
+		src\TableFilter.js = src\TableFilter.js
+		src\Util.js = src\Util.js
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{491C0DD4-7B2E-4770-842A-D401F94CB3EE}"
+	ProjectSection(SolutionItems) = preProject
+		tests\SearchEngineTests.js = tests\SearchEngineTests.js
+		tests\tests.html = tests\tests.html
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{04519C84-4BF8-437D-BE06-326A43249B9D} = {A7BB8170-C302-4BED-A57C-1B11A1BAD289}
+		{491C0DD4-7B2E-4770-842A-D401F94CB3EE} = {A7BB8170-C302-4BED-A57C-1B11A1BAD289}
+	EndGlobalSection
+EndGlobal

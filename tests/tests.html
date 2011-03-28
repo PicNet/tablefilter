@@ -1,0 +1,50 @@
+<html>
+<head>	
+	<link rel="stylesheet" href="qunit.css" type="text/css" media="screen" />	
+	<script type="text/javascript" src="http://ajax.microsoft.com/ajax/jquery/jquery-1.3.2.min.js"></script>    		
+	<script type="text/javascript" src="qunit.js"></script>		
+	<script type="text/javascript" src="../src/jquery.cookie.js"></script> 
+	<script type="text/javascript" src="../src/Util.js"></script> 
+	<script type="text/javascript" src="../src/jQueryPlugin.js"></script>			
+	<script type="text/javascript" src="../src/SearchEngine.js"></script> 
+	<script type="text/javascript" src="../src/Options.js"></script>
+	<script type="text/javascript" src="../src/FilterState.js"></script> 	
+	<script type="text/javascript" src="../src/TableFilter.js"></script> 	
+
+	<script type="text/javascript" src="TableFilterTests.js"></script>	 			
+	<script type="text/javascript" src="SearchEngineTests.js"></script>	 				
+	
+	<script>
+var se = strictEqual;
+this.strictEqual = function(expected, actual) { se(actual, expected); }		
+this.arrayEqual = function (arr1, arr2) {
+	var same = arr1.length === arr2.length;		
+	if (same) {
+		for (var i = 0; i < arr1.length; i++) { 
+			if (arr1[i] === arr2[i]) { continue; }
+			same = false; break;
+		}
+	} 
+	ok(same, '[' + arr1 + '] != [' + arr2 + ']');
+}
+	</script>
+</head>
+<body id="b">    	
+	<h1 id="qunit-header">PicNet Table Filter Unit Tests</h1>
+	<h2 id="qunit-banner"></h2>
+	<h2 id="qunit-userAgent"></h2>
+	<ol id="qunit-tests"></ol>	
+	<br/><br/>
+	<div id='tablefiltertests' style='background:silver;border:solid 2px black;'>
+		<h2>Testing Panel</h2><input type="checkbox" id="onlyyes"/><input type="checkbox" id="onlyno"/><input type="text" id="quickfind"/><a id="cleanfilters" href="#">clear</a>
+		<table id='testtable'>
+			<thead><tr><th>text</th><th>num</th><th>yes/no</th><th filter-type='ddl'>list</th><th filter='false'>nofilter</th><th>date</th><th filter='false'>empty</th></tr></thead>
+			<tbody>
+				<tr><td>Sydney</td><td>1</td><td>yes</td><td>hot</td><td>no filter text</td><td>1/Jan/2000</td><td>&nbsp;</td></tr>
+				<tr><td>Melbourne</td><td>2</td><td>no</td><td>cold</td><td>no filter text</td><td>2/Feb/2001</td><td>&nbsp;</td></tr>
+				<tr><td>Brisbane</td><td>3</td><td>no</td><td>hot</td><td>no filter text</td><td>3/Mar/2002</td><td>&nbsp;</td></tr>
+			</tbody>
+		</table>		
+	</div>	
+</body>
+</html>
