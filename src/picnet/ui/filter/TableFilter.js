@@ -213,7 +213,16 @@ picnet.ui.filter.TableFilter.prototype.getColumnIndexOfCurrentFilter = function(
 picnet.ui.filter.TableFilter.prototype.doesElementContainText = function(state, tr, textTokens) {		
     var cells = tr.getElementsByTagName('td');				
     var columnIdx = state === null ? -1 : state.idx;
-	var control = columnIdx < 0 ? tr : cells[columnIdx];		
+    var control;
+    if (columnIdx < 0)
+    {
+        var tdObj = document.createElement('td');
+        tdObj.innerText = tr.innerText;
+        control = tdObj;
+    }
+    else {
+        control = cells[columnIdx];  
+    }		
     return picnet.ui.filter.TableFilter.superClass_.doesElementContainText.call(this, state, control, textTokens);	
 };
 
