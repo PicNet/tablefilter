@@ -116,36 +116,36 @@ picnet.ui.filter.GenericListFilter.prototype.initialiseFilters = function() {
 /**
  * @private	 
  */
-picnet.ui.filter.GenericListFilter.prototype.registerListenersOnFilters = function() {
-    goog.array.forEach(this.filters, function(filter) {		
-		this.eventHandler.listen(filter, filter.getAttribute('type') === 'text' ? goog.events.EventType.KEYUP : goog.events.EventType.CHANGE, this.onFilterChanged, false, this);			
-	}, this); 
-    
+picnet.ui.filter.GenericListFilter.prototype.registerListenersOnFilters = function () {
+    goog.array.forEach(this.filters, function (filter) {
+        this.eventHandler.listen(filter, filter.getAttribute('type') === 'text' ? goog.events.EventType.KEYUP : goog.events.EventType.CHANGE, this.onFilterChanged, false, this);
+    }, this);
+
     if (this.options['clearFiltersControls']) {
         for (var i = 0; i < this.options['clearFiltersControls'].length; i++) {
-			if (this.options['clearFiltersControls'][i].length) this.options['clearFiltersControls'][i] = this.options['clearFiltersControls'][i][0];            
-            this.eventHandler.listen(this.options['clearFiltersControls'][i], goog.events.EventType.CLICK, this.clearAllFilters, false, this);			                    
+            if (this.options['clearFiltersControls'][i].length) this.options['clearFiltersControls'][i] = this.options['clearFiltersControls'][i][0];
+            this.eventHandler.listen(this.options['clearFiltersControls'][i], goog.events.EventType.CLICK, this.clearAllFilters, false, this);
         }
     }
-			
-    if (!this.options['additionalFilterTriggers']) return;
-				
-    for (i = 0; i < this.options['additionalFilterTriggers'].length; i++) {
-		/** @type {!Element} */
-        var trigger = this.options['additionalFilterTriggers'][i];		
-		if (trigger.length) trigger = this.options['additionalFilterTriggers'][i] = trigger[0]; // Remove jQueryObject
 
-		var type = trigger.options ? 'select-one' : trigger.getAttribute('type');			
+    if (!this.options['additionalFilterTriggers']) return;
+
+    for (i = 0; i < this.options['additionalFilterTriggers'].length; i++) {
+        /** @type {!Element} */
+        var trigger = this.options['additionalFilterTriggers'][i];
+        if (trigger.length) trigger = this.options['additionalFilterTriggers'][i] = trigger[0]; // Remove jQueryObject
+
+        var type = trigger.options ? 'select-one' : trigger.getAttribute('type');
         switch (type) {
-            case 'select-one':                    
-				this.eventHandler.listen(trigger, goog.events.EventType.CHANGE, this.onFilterChanged, false, this);			                    
+            case 'select-one':
+                this.eventHandler.listen(trigger, goog.events.EventType.CHANGE, this.onFilterChanged, false, this);
                 break;
             case 'text':
                 trigger.setAttribute('title', this.options['filterToolTipMessage']);
-				this.eventHandler.listen(trigger, goog.events.EventType.KEYUP, this.onFilterChanged, false, this);			                    
+                this.eventHandler.listen(trigger, goog.events.EventType.KEYUP, this.onFilterChanged, false, this);
                 break;
-            case 'checkbox':					
-                this.eventHandler.listen(trigger, goog.events.EventType.CLICK, this.onFilterChanged, false, this);			
+            case 'checkbox':
+                this.eventHandler.listen(trigger, goog.events.EventType.CLICK, this.onFilterChanged, false, this);
                 break;
             default:
                 throw 'Filter type ' + type + ' is not supported';
@@ -205,8 +205,8 @@ picnet.ui.filter.GenericListFilter.prototype.loadFiltersFromCookie = function() 
 /**	 
  * @private
  * @param {!Event} e
- */	
-picnet.ui.filter.GenericListFilter.prototype.onFilterChanged = function(e) {			
+ */
+picnet.ui.filter.GenericListFilter.prototype.onFilterChanged = function (e) {
     this.lastkeytime = new Date().getTime();
     this.quickFindTimer();
 };

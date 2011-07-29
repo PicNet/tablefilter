@@ -1,7 +1,7 @@
-c:\Python31\python.exe ^
-	lib/closure-library/closure/bin/calcdeps.py ^
+c:\Python27\python.exe ^
+	../closure-library/closure/bin/calcdeps.py ^
 	-i src/requirements.js ^
-	-p lib/closure-library/closure/ ^
+	-p ../closure-library/closure/ ^
 	-p src/ ^
 	--output_file=picnet.table.filter.min.js ^
 	-c lib/picnetcompiler.jar ^
