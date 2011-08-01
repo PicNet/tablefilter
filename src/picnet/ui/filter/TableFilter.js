@@ -216,7 +216,11 @@ picnet.ui.filter.TableFilter.prototype.doesElementContainText = function(state, 
     if (columnIdx < 0)
     {
         var tdObj = document.createElement('td');
-        tdObj.innerText = tr.innerText;
+        goog.array.forEach(cells, function (td) {
+            var txt = goog.dom.getTextContent(td);
+            tdObj.innerText = tdObj.innerText + '\t' + txt;
+        });
+        
         return picnet.ui.filter.TableFilter.superClass_.doesElementContainText.call(this, state, tr, tdObj, textTokens);	
     }
     else {
