@@ -432,10 +432,10 @@ picnet.ui.filter.GenericListFilter.prototype.checkMatchingElementCallback = func
  */
 picnet.ui.filter.GenericListFilter.prototype.doesTextContainText = function(state, item, textTokens) {            		
     var text = goog.dom.getTextContent(item);
-    if (!this.search.doesTextMatchTokens(text, textTokens, goog.isDefAndNotNull(state) && state.type === 'select-one')) { 						
-		return false; 
-	}			
-	return !this.options['matchingElement'] || this.options['matchingElement'](state, item, textTokens);				
+    return this.search.doesTextMatchTokens(text, textTokens, goog.isDefAndNotNull(state) && state.type === 'select-one'); // { 						
+//		  return false; 
+//	  }			
+	//return !this.options['matchingElement'] || this.options['matchingElement'](state, item, textTokens);				
 };
 
 /** @inheritDoc */
