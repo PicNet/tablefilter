@@ -7,26 +7,45 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		demo.htm = demo.htm
 		demosrc.htm = demosrc.htm
 		externs.js = externs.js
-		picnet.table.filter.min.js = picnet.table.filter.min.js
 		README.txt = README.txt
 		release.bat = release.bat
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{04519C84-4BF8-437D-BE06-326A43249B9D}"
 	ProjectSection(SolutionItems) = preProject
-		src\FilterState.js = src\FilterState.js
-		src\jquery.cookie.js = src\jquery.cookie.js
-		src\jQueryPlugin.js = src\jQueryPlugin.js
-		src\Options.js = src\Options.js
-		src\SearchEngine.js = src\SearchEngine.js
-		src\TableFilter.js = src\TableFilter.js
-		src\Util.js = src\Util.js
+		src\deps.js = src\deps.js
+		src\jquery-1.3.2.externs.js = src\jquery-1.3.2.externs.js
+		src\requirements.js = src\requirements.js
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{491C0DD4-7B2E-4770-842A-D401F94CB3EE}"
 	ProjectSection(SolutionItems) = preProject
 		tests\SearchEngineTests.js = tests\SearchEngineTests.js
 		tests\tests.html = tests\tests.html
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "picnet", "picnet", "{A2A92188-5CA4-454E-914F-CE201E8893F5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ui", "ui", "{98AE0E82-71EE-4F86-BCBB-A5285CE79093}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "filter", "filter", "{E274C6F8-3A8A-4985-93C1-365B2DA9A64F}"
+	ProjectSection(SolutionItems) = preProject
+		src\picnet\ui\filter\FilterState.js = src\picnet\ui\filter\FilterState.js
+		src\picnet\ui\filter\GenericListFilter.js = src\picnet\ui\filter\GenericListFilter.js
+		src\picnet\ui\filter\GenericListFilterOptions.js = src\picnet\ui\filter\GenericListFilterOptions.js
+		src\picnet\ui\filter\jQueryPlugin.js = src\picnet\ui\filter\jQueryPlugin.js
+		src\picnet\ui\filter\SearchEngine.js = src\picnet\ui\filter\SearchEngine.js
+		src\picnet\ui\filter\TableFilter.js = src\picnet\ui\filter\TableFilter.js
+		src\picnet\ui\filter\TableFilterOptions.js = src\picnet\ui\filter\TableFilterOptions.js
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lib", "lib", "{E675B01B-C5B9-43F7-8902-02044003CC68}"
+	ProjectSection(SolutionItems) = preProject
+		lib\7za.exe = lib\7za.exe
+		lib\7zip license.txt = lib\7zip license.txt
+		lib\compiler.jar = lib\compiler.jar
+		lib\google_closure_compiler.jar = lib\google_closure_compiler.jar
+		lib\picnetcompiler.jar = lib\picnetcompiler.jar
 	EndProjectSection
 EndProject
 Global
@@ -36,5 +55,9 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{04519C84-4BF8-437D-BE06-326A43249B9D} = {A7BB8170-C302-4BED-A57C-1B11A1BAD289}
 		{491C0DD4-7B2E-4770-842A-D401F94CB3EE} = {A7BB8170-C302-4BED-A57C-1B11A1BAD289}
+		{E675B01B-C5B9-43F7-8902-02044003CC68} = {A7BB8170-C302-4BED-A57C-1B11A1BAD289}
+		{A2A92188-5CA4-454E-914F-CE201E8893F5} = {04519C84-4BF8-437D-BE06-326A43249B9D}
+		{98AE0E82-71EE-4F86-BCBB-A5285CE79093} = {A2A92188-5CA4-454E-914F-CE201E8893F5}
+		{E274C6F8-3A8A-4985-93C1-365B2DA9A64F} = {98AE0E82-71EE-4F86-BCBB-A5285CE79093}
 	EndGlobalSection
 EndGlobal
