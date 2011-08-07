@@ -362,7 +362,7 @@ picnet.ui.filter.GenericListFilter.prototype.applyStateToElements = function(fil
         if (this.cancelQuickFind) return;
         var item = this.listItems[i];       
         if (item.getAttribute('filtermatch')) { continue; }                    			
-		if (!this.doesElementContainText(filterState, item, normalisedTokens)) { item.setAttribute('filtermatch', 'false'); }
+		if (!this.doesElementContainText(filterState, item, null, normalisedTokens)) { item.setAttribute('filtermatch', 'false'); }
     }
 };
 
@@ -404,8 +404,8 @@ picnet.ui.filter.GenericListFilter.prototype.hideElementsThatDoNotMatchAnyFiltre
  * @param {Array.<string>} textTokens
  * @return {boolean}
  */
-picnet.ui.filter.GenericListFilter.prototype.doesElementContainText = function(state, item, textTokens) {		        
-    return this.doesTextContainText(state, item, textTokens) && this.checkMatchingElementCallback(state, item, textTokens);			
+picnet.ui.filter.GenericListFilter.prototype.doesElementContainText = function(state, item, altItem, textTokens) {		        
+    return this.doesTextContainText(state, altItem === null ? item : altItem, textTokens) && this.checkMatchingElementCallback(state, item, textTokens);			
 };
 				
 	

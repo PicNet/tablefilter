@@ -210,20 +210,23 @@ picnet.ui.filter.TableFilter.prototype.getColumnIndexOfCurrentFilter = function(
 /**
  * @inheritDoc
  */
-picnet.ui.filter.TableFilter.prototype.doesElementContainText = function(state, tr, textTokens) {		
+picnet.ui.filter.TableFilter.prototype.doesElementContainText = function(state, tr, altItem, textTokens) {		
     var cells = tr.getElementsByTagName('td');				
     var columnIdx = state === null ? -1 : state.idx;
-    var control;
     if (columnIdx < 0)
     {
         var tdObj = document.createElement('td');
-        tdObj.innerText = tr.innerText;
-        control = tdObj;
+        goog.array.forEach(cells, function (td) {
+            var txt = goog.dom.getTextContent(td);
+            tdObj.innerText = tdObj.innerText + '\t' + txt;
+        });
+        
+        return picnet.ui.filter.TableFilter.superClass_.doesElementContainText.call(this, state, tr, tdObj, textTokens);	
     }
     else {
-        control = cells[columnIdx];  
+        return picnet.ui.filter.TableFilter.superClass_.doesElementContainText.call(this, state, cells[columnIdx], null, textTokens);	
     }		
-    return picnet.ui.filter.TableFilter.superClass_.doesElementContainText.call(this, state, control, textTokens);	
+   
 };
 
 /** @inheritDoc */
