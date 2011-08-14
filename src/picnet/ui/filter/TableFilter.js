@@ -1,4 +1,4 @@
-﻿
+﻿  
 goog.require('goog.array');
 goog.require('goog.dom.classes');
 goog.require('goog.dom');
@@ -66,15 +66,16 @@ picnet.ui.filter.TableFilter.prototype.initialiseFilters = function() {
 /**
  * @inheritDoc
  */
-picnet.ui.filter.TableFilter.prototype.initialiseControlCaches = function() {					    
-    this.headers = /** @type {!Array.<!Element>} */ (goog.dom.getElementsByTagNameAndClass('th', null, this.thead));
-    this.listItems = /** @type {!Array.<!Element>} */ (goog.dom.getElementsByTagNameAndClass('tr', null, this.tbody));
-    this.buildFiltersRow();		    
-	this.filters = /** @type {!Array.<!Element>} */ (goog.array.concat(
-		goog.array.map(goog.dom.getElementsByTagNameAndClass('input', null, this.thead), function(ctl) { return ctl; }), 
-		goog.array.map(goog.dom.getElementsByTagNameAndClass('select', null, this.thead), function(ctl) { return ctl; })
-	)); 	
-	this.filterColumnIndexes = goog.array.map(this.filters, this.getColumnIndexOfFilter, this);		
+picnet.ui.filter.TableFilter.prototype.initialiseControlCaches = function () {
+    this.headers = /** @type {!Array.<!Element>} */(goog.dom.getElementsByTagNameAndClass('th', null, this.thead));
+    this.listItems = /** @type {!Array.<!Element>} */(goog.dom.getElementsByTagNameAndClass('tr', null, this.tbody));
+    this.buildFiltersRow();
+    var tHeadFilters = goog.dom.getElementsByTagNameAndClass('tr', 'filters', this.thead)[0];
+    this.filters = /** @type {!Array.<!Element>} */(goog.array.concat(
+		goog.array.map(goog.dom.getElementsByTagNameAndClass('input', null, tHeadFilters), function (ctl) { return ctl; }),
+		goog.array.map(goog.dom.getElementsByTagNameAndClass('select', null, tHeadFilters), function (ctl) { return ctl; })
+	));
+  this.filterColumnIndexes = goog.array.map(this.filters, this.getColumnIndexOfFilter, this);
 };
 	
 	
@@ -210,23 +211,23 @@ picnet.ui.filter.TableFilter.prototype.getColumnIndexOfCurrentFilter = function(
 /**
  * @inheritDoc
  */
-picnet.ui.filter.TableFilter.prototype.doesElementContainText = function(state, tr, altItem, textTokens) {		
-    var cells = tr.getElementsByTagName('td');				
-    var columnIdx = state === null ? -1 : state.idx;
-    if (columnIdx < 0)
-    {
-        var tdObj = document.createElement('td');
-        goog.array.forEach(cells, function (td) {
-            var txt = goog.dom.getTextContent(td);
-            tdObj.innerHTML = tdObj.innerHTML + '\t' + txt;
-        });
-        
-        return picnet.ui.filter.TableFilter.superClass_.doesElementContainText.call(this, state, tr, tdObj, textTokens);	
+picnet.ui.filter.TableFilter.prototype.doesElementContainText = function (state, tr, textTokens) {
+  var cells = tr.getElementsByTagName('td');
+  var columnIdx = state === null ? -1 : state.idx;
+  if (columnIdx < 0) {
+    var txt = [];
+    for (var i = 0; i < cells.length; i++) {
+      var header = this.headers[i];
+      var visible = goog.style.isElementShown(header);
+      if (!visible || header.getAttribute('filter') === 'false') { continue; }
+      txt.push(goog.dom.getTextContent(cells[i]));
     }
-    else {
-        return picnet.ui.filter.TableFilter.superClass_.doesElementContainText.call(this, state, cells[columnIdx], null, textTokens);	
-    }		
-   
+    return picnet.ui.filter.TableFilter.superClass_.doesElementContainText.call(this, state, tr, textTokens, txt.join('\t'));
+  }
+  else {
+    return picnet.ui.filter.TableFilter.superClass_.doesElementContainText.call(this, state, cells[columnIdx], textTokens);
+  }
+
 };
 
 /** @inheritDoc */

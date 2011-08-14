@@ -356,14 +356,16 @@ picnet.ui.filter.GenericListFilter.prototype.clearElementFilteredStates = functi
  * @private
  * @param {picnet.ui.filter.FilterState} filterState	 
  */
-picnet.ui.filter.GenericListFilter.prototype.applyStateToElements = function(filterState) {
-    var normalisedTokens = this.getNormalisedSearchTokensForState(filterState);    
-    for (var i = 0; i < this.listItems.length; i++) {
-        if (this.cancelQuickFind) return;
-        var item = this.listItems[i];       
-        if (item.getAttribute('filtermatch')) { continue; }                    			
-		if (!this.doesElementContainText(filterState, item, null, normalisedTokens)) { item.setAttribute('filtermatch', 'false'); }
-    }
+picnet.ui.filter.GenericListFilter.prototype.applyStateToElements = function (filterState) {
+  var normalisedTokens = this.getNormalisedSearchTokensForState(filterState);
+  if (!normalisedTokens) { return; } // TODO: Validate this
+  
+  for (var i = 0; i < this.listItems.length; i++) {
+    if (this.cancelQuickFind) return;
+    var item = this.listItems[i];
+    if (item.getAttribute('filtermatch')) { continue; }
+    if (!this.doesElementContainText(filterState, item, normalisedTokens)) { item.setAttribute('filtermatch', 'false'); }
+  }
 };
 
 /**
@@ -402,10 +404,15 @@ picnet.ui.filter.GenericListFilter.prototype.hideElementsThatDoNotMatchAnyFiltre
  * @param {picnet.ui.filter.FilterState} state
  * @param {!Element} item
  * @param {Array.<string>} textTokens
+ * @param {string=} optText
  * @return {boolean}
  */
-picnet.ui.filter.GenericListFilter.prototype.doesElementContainText = function(state, item, altItem, textTokens) {		        
-    return this.doesTextContainText(state, altItem === null ? item : altItem, textTokens) && this.checkMatchingElementCallback(state, item, textTokens);			
+picnet.ui.filter.GenericListFilter.prototype.doesElementContainText = function (state, item, textTokens, optText) {  
+  var exact = goog.isDefAndNotNull(state) && state.type === 'select-one';
+  var matches = optText ?
+    this.doesTextContainTextImpl(optText, textTokens, exact) :
+    this.doesTextContainText(item, textTokens, exact);  
+  return matches && this.checkMatchingElementCallback(state, item, textTokens);
 };
 				
 	
@@ -424,18 +431,25 @@ picnet.ui.filter.GenericListFilter.prototype.checkMatchingElementCallback = func
 };
 
 /**
- * @protected	 
- * @param {picnet.ui.filter.FilterState} state
+ * @protected	  
  * @param {!Element} item
  * @param {Array.<string>} textTokens	 
+ * @param {boolean} exact
  * @return {boolean}
  */
-picnet.ui.filter.GenericListFilter.prototype.doesTextContainText = function(state, item, textTokens) {            		
-    var text = goog.dom.getTextContent(item);
-    return this.search.doesTextMatchTokens(text, textTokens, goog.isDefAndNotNull(state) && state.type === 'select-one'); // { 						
-//		  return false; 
-//	  }			
-	//return !this.options['matchingElement'] || this.options['matchingElement'](state, item, textTokens);				
+picnet.ui.filter.GenericListFilter.prototype.doesTextContainText = function(item, textTokens, exact) {
+  return this.doesTextContainTextImpl(goog.dom.getTextContent(item), textTokens, exact); 
+};
+
+/**
+ * @protected	 
+ * @param {string} text
+ * @param {Array.<string>} textTokens	 
+ * @param {boolean} exact
+ * @return {boolean}
+ */
+picnet.ui.filter.GenericListFilter.prototype.doesTextContainTextImpl = function (text, textTokens, exact) {
+  return this.search.doesTextMatchTokens(text, textTokens, exact); 
 };
 
 /** @inheritDoc */
