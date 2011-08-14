@@ -7,7 +7,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		demo.htm = demo.htm
 		demosrc.htm = demosrc.htm
 		externs.js = externs.js
-		picnet.table.filter.min.js = picnet.table.filter.min.js
 		README.txt = README.txt
 		release.bat = release.bat
 	EndProjectSection
@@ -21,8 +20,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{04519C84-4BF
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{491C0DD4-7B2E-4770-842A-D401F94CB3EE}"
 	ProjectSection(SolutionItems) = preProject
-		tests\SearchEngineTests.js = tests\SearchEngineTests.js
-		tests\tests.html = tests\tests.html
+		tests\SearchEngineTests.html = tests\SearchEngineTests.html
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "picnet", "picnet", "{8515BBBA-3595-47C8-9B19-B6BC3EE6B8F4}"
@@ -46,7 +44,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lib", "lib", "{E675B01B-C5B
 		lib\7zip license.txt = lib\7zip license.txt
 		lib\compiler.jar = lib\compiler.jar
 		lib\google_closure_compiler.jar = lib\google_closure_compiler.jar
-		lib\picnetcompiler.jar = lib\picnetcompiler.jar
 	EndProjectSection
 EndProject
 Global
