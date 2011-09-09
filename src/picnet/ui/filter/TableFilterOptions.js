@@ -14,11 +14,7 @@ picnet.ui.filter.TableFilterOptions = function () {
 };
 goog.inherits(picnet.ui.filter.TableFilterOptions, picnet.ui.filter.GenericListFilterOptions);
 
-/**
- * @export
- * @type {function(picnet.ui.filter.FilterState, Element, Array.<string>)?}
- */
-picnet.ui.filter.TableFilterOptions.prototype.matchingCell = null;
+
 /**
  * @export
  * @type {string}
