@@ -10,12 +10,6 @@ goog.require('picnet.ui.filter.GenericListFilter');
 goog.provide('picnet.ui.filter.TableFilter');
 
 /** 
- * @private
- * @type {number}
- */
-picnet.ui.filter.TableFilter.grididx = 0;
-
-/** 
  * @constructor
  * @extends {picnet.ui.filter.GenericListFilter}
  * @export
@@ -52,6 +46,14 @@ picnet.ui.filter.TableFilter = function(grid, options) {
     this.tbody;		    	
 };
 goog.inherits(picnet.ui.filter.TableFilter, picnet.ui.filter.GenericListFilter);
+
+
+/** 
+* @private
+* @type {number}
+*/
+picnet.ui.filter.TableFilter.grididx = 0;
+
 
 /**
  * @inheritDoc

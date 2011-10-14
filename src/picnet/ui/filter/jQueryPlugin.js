@@ -11,11 +11,13 @@ goog.provide('picnet.ui.filter.jQueryPlugin');
 var jq = window['jQuery'];
 if (jq) {
     (function (jq) {
+        /** @constructor */
         jq.tableFilter = function (element, opts) {
             var tf;
             var plugin = this;
             plugin.init = function () {
-                var options = jq['extend']({}, new picnet.ui.filter.TableFilterOptions(), opts);
+                var tfo = new picnet.ui.filter.TableFilterOptions();
+                var options = jq['extend']({}, tfo, opts);
                 tf = new picnet.ui.filter.TableFilter(element, options);
             };
 

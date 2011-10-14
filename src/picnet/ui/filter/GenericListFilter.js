@@ -15,12 +15,6 @@ goog.require('picnet.ui.filter.SearchEngine');
 goog.provide('picnet.ui.filter.GenericListFilter');
 
 /** 
- * @private
- * @type {number}
- */
-picnet.ui.filter.GenericListFilter.filteridx = 0;
-
-/** 
  * @constructor
  * @extends {goog.Disposable}
  * @export
@@ -93,6 +87,13 @@ picnet.ui.filter.GenericListFilter = function(filterInput, list, options) {
 	this.initialiseFilters(); // Initialise
 };
 goog.inherits(picnet.ui.filter.GenericListFilter, goog.Disposable);
+
+
+/** 
+* @private
+* @type {number}
+*/
+picnet.ui.filter.GenericListFilter.filteridx = 0;
 
 /**
  * @param {!Element} list
@@ -206,7 +207,7 @@ picnet.ui.filter.GenericListFilter.prototype.loadFiltersFromCookie = function() 
  * @private
  * @param {!Event} e
  */
-picnet.ui.filter.GenericListFilter.prototype.onFilterChanged = function (e) {
+picnet.ui.filter.GenericListFilter.prototype.onFilterChanged = function (e) {    
     this.lastkeytime = new Date().getTime();
     this.quickFindTimer();
 };
@@ -218,7 +219,7 @@ picnet.ui.filter.GenericListFilter.prototype.quickFindTimer = function() {
     if (this.lastTimerID) { clearTimeout(this.lastTimerID); this.lastTimerID = 0; }
     this.cancelQuickFind = true;
 
-    var curtime = new Date().getTime();
+    var curtime = new Date().getTime();  
     var delay = this.options['filterDelay'];        
     if (curtime - this.lastkeytime >= delay) {
         this.refresh();
