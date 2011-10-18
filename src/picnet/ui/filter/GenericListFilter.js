@@ -324,8 +324,8 @@ picnet.ui.filter.GenericListFilter.prototype.applyFilterStatesImpl = function(fi
 						
                 switch (state.type) {
                     case 'select-one':
-						goog.array.forEach(filter.options, function(o) {
-							if (o.value === state.value) o.setAttribute('selected', 'selected');
+						goog.array.forEach(filter.options, function(o, idx) {
+							if (o.value === state.value) { o.setAttribute('selected', 'selected'); filter.selectedIndex = idx; }
 							else o.removeAttribute('selected');
 						});
 						break;
