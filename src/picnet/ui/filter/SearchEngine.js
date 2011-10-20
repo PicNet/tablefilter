@@ -75,22 +75,22 @@ picnet.ui.filter.SearchEngine.prototype.doesNumberMatchToken = function(token, t
 	var op,exp,actual = this.getNumberFrom(text);	
 	if (token.indexOf('=') === 0) {
 		op = '=';
-		exp = parseInt(token.substring(1), 10);
+		exp = parseFloat(token.substring(1), 10);
 	} else if (token.indexOf('!=') === 0) {
 		op = '!=';
-		exp = parseInt(token.substring(2), 10);
+		exp = parseFloat(token.substring(2), 10);
 	} else if (token.indexOf('>=') === 0) {
 		op = '>=';
-		exp = parseInt(token.substring(2), 10);
+		exp = parseFloat(token.substring(2), 10);
 	} else if (token.indexOf('>') === 0) {
 		op = '>';
-		exp = parseInt(token.substring(1), 10);
+		exp = parseFloat(token.substring(1), 10);
 	} else if (token.indexOf('<=') === 0) {
 		op = '<=';
-		exp = parseInt(token.substring(2), 10);
+		exp = parseFloat(token.substring(2), 10);
 	} else if (token.indexOf('<') === 0) {
 		op = '<';
-		exp = parseInt(token.substring(1), 10);
+		exp = parseFloat(token.substring(1), 10);
 	} else {
 		return true;
 	}
@@ -115,7 +115,7 @@ picnet.ui.filter.SearchEngine.prototype.getNumberFrom = function(txt) {
 	if (txt.charAt(0) === '$') {
 		txt = txt.substring(1);
 	}
-	return parseInt(txt, 10);
+	return parseFloat(txt, 10);
 };
 		
 /**	 
