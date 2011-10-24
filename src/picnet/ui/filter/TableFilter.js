@@ -1,5 +1,6 @@
 ﻿  
 goog.require('goog.array');
+goog.require('goog.string');
 goog.require('goog.dom.classes');
 goog.require('goog.dom');
 goog.require('goog.style');
@@ -109,7 +110,7 @@ picnet.ui.filter.TableFilter.prototype.buildFiltersRow = function() {
 		var visible = goog.style.isElementShown(header);		
 		if (!visible) { continue; }
 			
-        var headerText = header.getAttribute('filter') === 'false' || !visible ? '' : goog.dom.getTextContent(header);				
+		var headerText = header.getAttribute('filter') === 'false' || !visible ? '' : goog.dom.getTextContent(header);
 		var filterClass = header.getAttribute('filter-class');
 		/** @type Element */ 
 		var td;
@@ -153,7 +154,7 @@ picnet.ui.filter.TableFilter.prototype.getSelectFilter = function(colIdx, header
 	});		
     var values = [];
 	goog.array.forEach(cells, function(td) {			
-		var txt = goog.dom.getTextContent(td);						
+		var txt = goog.string.trim(goog.dom.getTextContent(td));
         if (!txt || txt === '&nbsp;' || goog.array.indexOf(values, txt) >= 0) { return; }						
         values.push(txt);
 	});
@@ -222,7 +223,7 @@ picnet.ui.filter.TableFilter.prototype.doesElementContainText = function (state,
       var header = this.headers[i];
       var visible = goog.style.isElementShown(header);
       if (!visible || header.getAttribute('filter') === 'false') { continue; }
-      txt.push(goog.dom.getTextContent(cells[i]));
+      txt.push(goog.string.trim(goog.dom.getTextContent(cells[i])));
     }
     return picnet.ui.filter.TableFilter.superClass_.doesElementContainText.call(this, state, tr, textTokens, txt.join('\t'));
   }
