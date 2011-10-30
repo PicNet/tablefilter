@@ -439,7 +439,7 @@ picnet.ui.filter.GenericListFilter.prototype.checkMatchingElementCallback = func
  * @return {boolean}
  */
 picnet.ui.filter.GenericListFilter.prototype.doesTextContainText = function(item, textTokens, exact) {
-  return this.doesTextContainTextImpl(goog.dom.getTextContent(item), textTokens, exact); 
+  return this.doesTextContainTextImpl(goog.string.trim(goog.dom.getTextContent(item)), textTokens, exact); 
 };
 
 /**
