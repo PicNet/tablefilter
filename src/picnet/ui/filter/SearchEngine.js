@@ -230,7 +230,7 @@ picnet.ui.filter.SearchEngine.prototype.convertExpressionToPostFix = function(no
 			else {
 				if (token === ')') {
 					stackOperator = stackOps.pop();
-					while (stackOperator !== '(') {
+					while (stackOperator !== '(' && stackOps.length > 0) {
 						postFix = postFix + '|' + stackOperator;
 						stackOperator = stackOps.pop();
 					}
