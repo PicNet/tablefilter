@@ -1,11 +1,20 @@
 
 goog.provide('picnet.ui.filter.SearchEngine');
-goog.provide('picnet.ui.filter.SearchEngine.EPrecedence');
 
 /**
  * @constructor
  */
-picnet.ui.filter.SearchEngine = function() {};
+picnet.ui.filter.SearchEngine = function() {
+  /**
+   * @private
+   * @type {Object.<number>}
+   */
+  this.precedences_ = {
+    'or' :1,
+    'and':2,
+    'not':3
+  };
+};
 
 /**	 
  * @param {string} textToMatch
@@ -231,7 +240,7 @@ picnet.ui.filter.SearchEngine.prototype.convertExpressionToPostFix = function(no
 				} else {
 					while (stackOps.length !== 0) {
 						if (stackOps[stackOps.length - 1] === '(') { break; }
-						if (picnet.ui.filter.SearchEngine.EPrecedence[stackOps[stackOps.length - 1]] > picnet.ui.filter.SearchEngine.EPrecedence[token]) {
+						if (this.precedences_[stackOps[stackOps.length - 1]] > this.precedences_[token]) {
 							stackOperator = stackOps.pop();
 							postFix = postFix + '|' + stackOperator;
 						}
@@ -244,13 +253,4 @@ picnet.ui.filter.SearchEngine.prototype.convertExpressionToPostFix = function(no
 	}
 	while (stackOps.length > 0) { postFix = postFix + '|' + stackOps.pop(); }
 	return postFix.substring(1);
-};
-
-/**
- * @enum {number}
- */
-picnet.ui.filter.SearchEngine.EPrecedence = {
-	or: 1,
-	and: 2,
-	not: 3
 };
