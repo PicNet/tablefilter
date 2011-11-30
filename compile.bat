@@ -1,6 +1,6 @@
 c:\Python27\python.exe ^
 	U:\shared\lib\closure-library\closure\bin\build\depswriter.py ^
-  --root_with_prefix="src\ ../../../tablefilter/src/" ^
+  --root_with_prefix="src\ ../../../../tablefilter/src/" ^
   --output_file=src/deps.js && ^
 c:\Python27\python.exe ^
 	U:\shared\lib\closure-library\closure\bin\build\closurebuilder.py ^

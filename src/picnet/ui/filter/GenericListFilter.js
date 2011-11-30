@@ -357,9 +357,9 @@ picnet.ui.filter.GenericListFilter.prototype.clearElementFilteredStates = functi
  * @private
  * @param {picnet.ui.filter.FilterState} filterState	 
  */
-picnet.ui.filter.GenericListFilter.prototype.applyStateToElements = function (filterState) {
+picnet.ui.filter.GenericListFilter.prototype.applyStateToElements = function (filterState) {  
   var normalisedTokens = this.getNormalisedSearchTokensForState(filterState);
-  if (!normalisedTokens) { return; } // TODO: Validate this
+  // if (!normalisedTokens) { return; } // TODO: Validate this
   
   for (var i = 0; i < this.listItems.length; i++) {
     if (this.cancelQuickFind) return;
@@ -382,7 +382,7 @@ picnet.ui.filter.GenericListFilter.prototype.getNormalisedSearchTokensForState =
         case 'text':
             return this.search.parseSearchTokens(state.value);
         case 'checkbox':
-            return null;
+          return null;
         default:
             throw 'State type ' + state.type + ' is not supported';
     }
