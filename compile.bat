@@ -1,16 +1,19 @@
-c:\Python27\python.exe ^
-	U:\shared\lib\closure-library\closure\bin\build\depswriter.py ^
+set PYTHON27_EXEC=C:\Python27\python.exe
+set CLOSURE_LIBRARY=U:\shared\lib\closure-library\
+set CLOSURE_COMPILER=U:\shared\lib\compiler.jar
+
+%PYTHON27_EXEC% ^
+	%CLOSURE_LIBRARY%closure\bin\build\depswriter.py ^
   --root_with_prefix="src\ ../../../../tablefilter/src/" ^
   --output_file=src/deps.js && ^
-c:\Python27\python.exe ^
-	U:\shared\lib\closure-library\closure\bin\build\closurebuilder.py ^
+%PYTHON27_EXEC% ^
+	%CLOSURE_LIBRARY%closure\bin\build\closurebuilder.py ^
 	--namespace="picnet.ui.filter.TableFilter" ^
   --namespace="picnet.ui.filter.jQueryPlugin" ^
-	--root=U:\shared\lib\closure-library\ ^
-  --root=U:\shared\lib\picnet_closure_repo\ ^
+	--root=%CLOSURE_LIBRARY% ^
   --root=src\ ^
   --output_mode=compiled ^
-	--compiler_jar=U:\shared\lib\picnetcompiler.jar ^
+	--compiler_jar=%CLOSURE_COMPILER% ^
 	--compiler_flags="--debug=true" ^
 	--compiler_flags="--process_closure_primitives=true" ^
 	--compiler_flags="--warning_level=VERBOSE" ^
