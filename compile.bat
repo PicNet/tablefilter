@@ -4,7 +4,7 @@ set CLOSURE_COMPILER=U:\shared\lib\compiler.jar
 
 %PYTHON27_EXEC% ^
 	%CLOSURE_LIBRARY%closure\bin\build\depswriter.py ^
-  --root_with_prefix="src\ ../../../../tablefilter/src/" ^
+  --root_with_prefix="src\ ../../../tablefilter/src/" ^
   --output_file=src/deps.js && ^
 %PYTHON27_EXEC% ^
 	%CLOSURE_LIBRARY%closure\bin\build\closurebuilder.py ^
@@ -31,5 +31,12 @@ set CLOSURE_COMPILER=U:\shared\lib\compiler.jar
 	--compiler_flags="--jscomp_warning=unknownDefines" ^
 	--compiler_flags="--summary_detail_level=3" ^
   --compiler_flags="--compilation_level=ADVANCED_OPTIMIZATIONS" ^
-  --output_file=picnet.table.filter.min.js
- 
+  --output_file=picnet.table.filter.min.js && ^
+%PYTHON27_EXEC% ^
+	%CLOSURE_LIBRARY%closure\bin\build\closurebuilder.py ^
+	--namespace="picnet.ui.filter.TableFilter" ^
+  --namespace="picnet.ui.filter.jQueryPlugin" ^
+	--root=%CLOSURE_LIBRARY% ^
+  --root=src\ ^
+  --output_mode=script ^
+  --output_file=picnet.table.filter.full.js
