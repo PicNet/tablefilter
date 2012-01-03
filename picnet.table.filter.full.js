@@ -309,10 +309,10 @@ goog.ENABLE_DEBUG_LOADER = true;
 goog.require = function(name) {
 
   // if the object already exists we do not need do do anything
-  // TODO(user): If we start to support require based on file name this has
+  // TODO(arv): If we start to support require based on file name this has
   //            to change
-  // TODO(user): If we allow goog.foo.* this has to change
-  // TODO(user): If we implement dynamic load after page load we should probably
+  // TODO(arv): If we allow goog.foo.* this has to change
+  // TODO(arv): If we implement dynamic load after page load we should probably
   //            not remove this code for the compiled output
   if (!COMPILED) {
     if (goog.isProvided_(name)) {
@@ -901,7 +901,7 @@ goog.isObject = function(val) {
  * @return {number} The unique ID for the object.
  */
 goog.getUid = function(obj) {
-  // TODO(user): Make the type stricter, do not accept null.
+  // TODO(arv): Make the type stricter, do not accept null.
 
   // In Opera window.hasOwnProperty exists but always returns false so we avoid
   // using it. As a consequence the unique ID generated for BaseClass.prototype
@@ -918,7 +918,7 @@ goog.getUid = function(obj) {
  * @param {Object} obj The object to remove the unique ID field from.
  */
 goog.removeUid = function(obj) {
-  // TODO(user): Make the type stricter, do not accept null.
+  // TODO(arv): Make the type stricter, do not accept null.
 
   // DOM nodes in IE are not instance of Object and throws exception
   // for delete. Instead we try to use removeAttribute
@@ -4632,7 +4632,7 @@ goog.array.peek = function(array) {
 goog.array.ARRAY_PROTOTYPE_ = Array.prototype;
 
 
-// NOTE(user): Since most of the array functions are generic it allows you to
+// NOTE(arv): Since most of the array functions are generic it allows you to
 // pass an array-like object. Strings have a length and are considered array-
 // like. However, the 'in' operator does not work on strings so we cannot just
 // use the array path even if the browser supports indexing into strings. We
@@ -5557,7 +5557,7 @@ goog.array.binarySearch_ = function(arr, compareFn, isEvaluator, opt_target,
  *     first argument is less than, equal to, or greater than the second.
  */
 goog.array.sort = function(arr, opt_compareFn) {
-  // TODO(user): Update type annotation since null is not accepted.
+  // TODO(arv): Update type annotation since null is not accepted.
   goog.asserts.assert(arr.length != null);
 
   goog.array.ARRAY_PROTOTYPE_.sort.call(
@@ -6864,6 +6864,13 @@ goog.dom.BrowserFeature = {
   CAN_USE_INNER_TEXT: goog.userAgent.IE && !goog.userAgent.isVersion('9'),
 
   /**
+   * MSIE, Opera, and Safari>=4 support element.parentElement to access an
+   * element's parent if it is an Element.
+   */
+  CAN_USE_PARENT_ELEMENT_PROPERTY: goog.userAgent.IE || goog.userAgent.OPERA ||
+      goog.userAgent.WEBKIT,
+
+  /**
    * Whether NoScope elements need a scoped element written before them in
    * innerHTML.
    * MSDN: http://msdn.microsoft.com/en-us/library/ms533897(VS.85).aspx#1
@@ -6895,7 +6902,7 @@ goog.dom.BrowserFeature = {
  */
 
 
-// TODO(user): Rename/refactor getTextContent and getRawTextContent. The problem
+// TODO(arv): Rename/refactor getTextContent and getRawTextContent. The problem
 // is that getTextContent should mimic the DOM3 textContent. We should add a
 // getInnerText (or getText) which tries to return the visible text, innerText.
 
@@ -7281,7 +7288,7 @@ goog.dom.DIRECT_ATTRIBUTE_MAP_ = {
  * @return {!goog.math.Size} Object with values 'width' and 'height'.
  */
 goog.dom.getViewportSize = function(opt_window) {
-  // TODO(user): This should not take an argument
+  // TODO(arv): This should not take an argument
   return goog.dom.getViewportSize_(opt_window || window);
 };
 
@@ -7342,7 +7349,7 @@ goog.dom.getDocumentHeight = function() {
  * @return {number} The height of the document of the given window.
  */
 goog.dom.getDocumentHeight_ = function(win) {
-  // NOTE(user): This method will return the window size rather than the document
+  // NOTE(eae): This method will return the window size rather than the document
   // size in webkit quirks mode.
   var doc = win.document;
   var height = 0;
@@ -7471,7 +7478,7 @@ goog.dom.getDocumentScrollElement_ = function(doc) {
  * @return {!Window} The window associated with the given document.
  */
 goog.dom.getWindow = function(opt_doc) {
-  // TODO(user): This should not take an argument.
+  // TODO(arv): This should not take an argument.
   return opt_doc ? goog.dom.getWindow_(opt_doc) : window;
 };
 
@@ -7587,7 +7594,7 @@ goog.dom.append_ = function(doc, parent, args, startIndex) {
 
   for (var i = startIndex; i < args.length; i++) {
     var arg = args[i];
-    // TODO(user): Fix isArrayLike to return false for a text node.
+    // TODO(attila): Fix isArrayLike to return false for a text node.
     if (goog.isArrayLike(arg) && !goog.dom.isNodeLike(arg)) {
       // If the argument is a node list, not a real array, use a clone,
       // because forEach can't be used to mutate a NodeList.
@@ -8105,6 +8112,20 @@ goog.dom.isWindow = function(obj) {
 
 
 /**
+ * Returns an element's parent, if it's an Element.
+ * @param {Element} element The DOM element.
+ * @return {Element} The parent, or null if not an Element.
+ */
+goog.dom.getParentElement = function(element) {
+  if (goog.dom.BrowserFeature.CAN_USE_PARENT_ELEMENT_PROPERTY) {
+    return element.parentElement;
+  }
+  var parent = element.parentNode;
+  return goog.dom.isElement(parent) ? (/** @type {!Element} */ parent) : null;
+};
+
+
+/**
  * Whether a node contains another node.
  * @param {Node} parent The node that should contain the other node.
  * @param {Node} descendant The node to test presence of.
@@ -8300,7 +8321,7 @@ goog.dom.findCommonAncestor = function(var_args) {
  * @return {!Document} The document owning the node.
  */
 goog.dom.getOwnerDocument = function(node) {
-  // TODO(user): Remove IE5 code.
+  // TODO(arv): Remove IE5 code.
   // IE5 uses document instead of ownerDocument
   return /** @type {!Document} */ (
       node.nodeType == goog.dom.NodeType.DOCUMENT ? node :
@@ -8525,7 +8546,7 @@ goog.dom.setFocusableTabIndex = function(element, enable) {
  */
 goog.dom.getTextContent = function(node) {
   var textContent;
-  // Note(user): IE9, Opera, and Safari 3 support innerText but they include
+  // Note(arv): IE9, Opera, and Safari 3 support innerText but they include
   // text nodes in script tags. So we revert to use a user agent test here.
   if (goog.dom.BrowserFeature.CAN_USE_INNER_TEXT && ('innerText' in node)) {
     textContent = goog.string.canonicalizeNewlines(node.innerText);
@@ -8686,7 +8707,7 @@ goog.dom.getNodeAtOffset = function(parent, offset, opt_result) {
  * @return {boolean} Whether the object is a NodeList.
  */
 goog.dom.isNodeList = function(val) {
-  // TODO(user): Now the isNodeList is part of goog.dom we can use
+  // TODO(attila): Now the isNodeList is part of goog.dom we can use
   // goog.userAgent to make this simpler.
   // A NodeList must have a length property of type 'number' on all platforms.
   if (val && typeof val.length == 'number') {
@@ -8944,7 +8965,7 @@ goog.dom.DomHelper.prototype.setProperties = goog.dom.setProperties;
  * @return {!goog.math.Size} Object with values 'width' and 'height'.
  */
 goog.dom.DomHelper.prototype.getViewportSize = function(opt_window) {
-  // TODO(user): This should not take an argument. That breaks the rule of a
+  // TODO(arv): This should not take an argument. That breaks the rule of a
   // a DomHelper representing a single frame/window/document.
   return goog.dom.getViewportSize(opt_window || this.getWindow());
 };
@@ -9877,7 +9898,7 @@ goog.style.scrollIntoContainerView = function(element, container, opt_center) {
  * @return {!goog.math.Coordinate} Client left and top.
  */
 goog.style.getClientLeftTop = function(el) {
-  // NOTE(user): Gecko prior to 1.9 doesn't support clientTop/Left, see
+  // NOTE(eae): Gecko prior to 1.9 doesn't support clientTop/Left, see
   // https://bugzilla.mozilla.org/show_bug.cgi?id=111207
   if (goog.userAgent.GECKO && !goog.userAgent.isVersion('1.9')) {
     var left = parseFloat(goog.style.getComputedStyle(el, 'borderLeftWidth'));
@@ -9908,7 +9929,7 @@ goog.style.getPageOffset = function(el) {
   var box, doc = goog.dom.getOwnerDocument(el);
   var positionStyle = goog.style.getStyle_(el, 'position');
 
-  // NOTE(user): Gecko pre 1.9 normally use getBoxObjectFor to calculate the
+  // NOTE(eae): Gecko pre 1.9 normally use getBoxObjectFor to calculate the
   // position. When invoked for an element with position absolute and a negative
   // position though it can be off by one. Therefor the recursive implementation
   // is used in those (relatively rare) cases.
@@ -9916,11 +9937,11 @@ goog.style.getPageOffset = function(el) {
       !el.getBoundingClientRect && positionStyle == 'absolute' &&
       (box = doc.getBoxObjectFor(el)) && (box.screenX < 0 || box.screenY < 0);
 
-  // NOTE(user): If element is hidden (display none or disconnected or any the
+  // NOTE(arv): If element is hidden (display none or disconnected or any the
   // ancestors are hidden) we get (0,0) by default but we still do the
   // accumulation of scroll position.
 
-  // TODO(user): Should we check if the node is disconnected and in that case
+  // TODO(arv): Should we check if the node is disconnected and in that case
   //            return (0,0)?
 
   var pos = new goog.math.Coordinate(0, 0);
@@ -10158,7 +10179,7 @@ goog.style.setPageOffset = function(el, x, opt_y) {
     x = x.x;
   }
 
-  // NOTE(user): We cannot allow strings for x and y. We could but that would
+  // NOTE(arv): We cannot allow strings for x and y. We could but that would
   // require us to manually transform between different units
 
   // Work out deltas
@@ -10371,7 +10392,7 @@ goog.style.setOpacity = function(el, alpha) {
   } else if ('MozOpacity' in style) {
     style.MozOpacity = alpha;
   } else if ('filter' in style) {
-    // TODO(user): Overwriting the filter might have undesired side effects.
+    // TODO(arv): Overwriting the filter might have undesired side effects.
     if (alpha === '') {
       style.filter = '';
     } else {
@@ -10649,7 +10670,7 @@ goog.style.isUnselectable = function(el) {
  *     selectable state, and leave its descendants alone; defaults to false.
  */
 goog.style.setUnselectable = function(el, unselectable, opt_noRecurse) {
-  // TODO(user): Do we need all of TR_DomUtil.makeUnselectable() in Closure?
+  // TODO(attila): Do we need all of TR_DomUtil.makeUnselectable() in Closure?
   var descendants = !opt_noRecurse ? el.getElementsByTagName('*') : null;
   var name = goog.style.unselectableStyle_;
   if (name) {
@@ -10795,8 +10816,11 @@ goog.style.setBoxSizingSize_ = function(element, size, boxSizing) {
     // Includes IE8 and Opera 9.50+
     style.boxSizing = boxSizing;
   }
-  style.width = size.width + 'px';
-  style.height = size.height + 'px';
+
+  // Setting this to a negative value will throw an exception on IE
+  // (and doesn't do anything different than setting it to 0).
+  style.width = Math.max(size.width, 0) + 'px';
+  style.height = Math.max(size.height, 0) + 'px';
 };
 
 
@@ -10873,7 +10897,7 @@ goog.style.getBox_ = function(element, stylePrefix) {
     var bottom = /** @type {string} */ (
         goog.style.getComputedStyle(element, stylePrefix + 'Bottom'));
 
-    // NOTE(user): Gecko can return floating point numbers for the computed
+    // NOTE(arv): Gecko can return floating point numbers for the computed
     // style values.
     return new goog.math.Box(parseFloat(top),
                              parseFloat(right),
@@ -11259,6 +11283,7 @@ goog.disposable.IDisposable.prototype.isDisposed;
 /**
  * @fileoverview Implements the disposable interface. The dispose method is used
  * to clean up references and resources.
+ * @author arv@google.com (Erik Arvidsson)
  */
 
 
@@ -11901,6 +11926,7 @@ goog.debug.entryPointRegistry.unmonitorAllIfPossible = function(monitor) {
 /**
  * @fileoverview Definition of the goog.events.EventWrapper interface.
  *
+ * @author eae@google.com (Emil A Eklund)
  */
 
 goog.provide('goog.events.EventWrapper');
@@ -11968,6 +11994,8 @@ goog.events.EventWrapper.prototype.unlisten = function(src, listener, opt_capt,
 /**
  * @fileoverview Event Types.
  *
+ * @author arv@google.com (Erik Arvidsson)
+ * @author mirkov@google.com (Mirko Visontai)
  */
 
 
@@ -12528,7 +12556,7 @@ goog.events.BrowserEvent.prototype.init = function(e, opt_currentTarget) {
         relatedTarget = null;
       }
     }
-    // TODO(user): Use goog.events.EventType when it has been refactored into its
+    // TODO(arv): Use goog.events.EventType when it has been refactored into its
     // own file.
   } else if (type == goog.events.EventType.MOUSEOVER) {
     relatedTarget = e.fromElement;
@@ -12538,8 +12566,13 @@ goog.events.BrowserEvent.prototype.init = function(e, opt_currentTarget) {
 
   this.relatedTarget = relatedTarget;
 
-  this.offsetX = e.offsetX !== undefined ? e.offsetX : e.layerX;
-  this.offsetY = e.offsetY !== undefined ? e.offsetY : e.layerY;
+  // Webkit emits a lame warning whenever layerX/layerY is accessed.
+  // http://code.google.com/p/chromium/issues/detail?id=101733
+  this.offsetX = (goog.userAgent.WEBKIT || e.offsetX !== undefined) ?
+      e.offsetX : e.layerX;
+  this.offsetY = (goog.userAgent.WEBKIT || e.offsetY !== undefined) ?
+      e.offsetY : e.layerY;
+
   this.clientX = e.clientX !== undefined ? e.clientX : e.pageX;
   this.clientY = e.clientY !== undefined ? e.clientY : e.pageY;
   this.screenX = e.screenX || 0;
@@ -13057,7 +13090,7 @@ goog.events.unlistenByKey = function(key) {
   if (src.removeEventListener) {
     // EventTarget calls unlisten so we need to ensure that the source is not
     // an event target to prevent re-entry.
-    // TODO(user): What is this goog.global for? Why would anyone listen to
+    // TODO(arv): What is this goog.global for? Why would anyone listen to
     // events on the [[Global]] object? Is it supposed to be window? Why would
     // we not want to allow removing event listeners on the window?
     if (src == goog.global || !src.customEvent_) {
@@ -14066,6 +14099,8 @@ goog.events.EventHandler.prototype.handleEvent = function(e) {
 /**
  * @fileoverview Implementation of EventTarget as defined by W3C DOM 2/3.
  *
+ * @author arv@google.com (Erik Arvidsson) [Original implementation]
+ * @author pupius@google.com (Daniel Pupius) [Port to use goog.events]
  * @see ../demos/eventtarget.html
  */
 
@@ -14890,6 +14925,7 @@ picnet.ui.filter.SearchEngine.prototype.convertExpressionToPostFix = function(no
 /**
  * @fileoverview Functions for setting, getting and deleting cookies.
  *
+ * @author arv@google.com (Erik Arvidsson)
  */
 
 
