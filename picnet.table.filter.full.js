@@ -14648,9 +14648,9 @@ picnet.ui.filter.GenericListFilterOptions.prototype['matchingElement'] = null;
 picnet.ui.filter.GenericListFilterOptions.prototype['filteringElements'] = null;
 /**
  * @export
- * @type {function(!Array.<!picnet.ui.filter.FilterState>)?}
+ * @type {string}
  */
-picnet.ui.filter.GenericListFilterOptions.prototype['filteredElements'] = null;
+picnet.ui.filter.GenericListFilterOptions.prototype['additionalFilterValueCookieId'] = null;
 
 
 goog.provide('picnet.ui.filter.SearchEngine');
@@ -15504,15 +15504,28 @@ picnet.ui.filter.GenericListFilter.prototype.initialiseControlCaches = function(
  * @private
  */
 picnet.ui.filter.GenericListFilter.prototype.loadFiltersFromCookie = function() {									
-    var filterState = this.options['enableCookies'] && goog.net.cookies.get(this.filterKey);
-    if (!filterState) { return; }
+  var filterState = this.options['enableCookies'] && goog.net.cookies.get(this.filterKey);
+  if (filterState) {
     filterState = filterState.split('|');
     var states = /** @type{!Array.<picnet.ui.filter.FilterState>} */ ([]);
     for (var i = 0; i < filterState.length; i++) {
-        var state = filterState[i].split(',');
-        states.push(new picnet.ui.filter.FilterState(state[0], state[3], parseInt(state[1], 10), state[2]));
-    }			
+      var state = filterState[i].split(',');
+      states.push(new picnet.ui.filter.FilterState(state[0], state[3], parseInt(state[1], 10), state[2]));
+    }
     this.applyFilterStates(states, true);
+  }
+  var additionalFilterValueCookieId = this.options['additionalFilterValueCookieId'];
+  if (additionalFilterValueCookieId) {
+    var additionalFilterStates = this.options['enableCookies'] && goog.net.cookies.get(additionalFilterValueCookieId);
+    if (!additionalFilterStates) { return; }
+    additionalFilterStates = additionalFilterStates.split('|');
+    var additionalStates = /** @type{!Array.<picnet.ui.filter.FilterState>} */ ([]);
+    for (var i = 0; i < additionalFilterStates.length; i++) {
+      var additionalState = additionalFilterStates[i].split(',');
+      additionalStates.push(new picnet.ui.filter.FilterState(additionalState[0], additionalState[3], parseInt(additionalState[1], 10), additionalState[2]));
+    }			
+    this.applyFilterStates(additionalStates, true);
+  }
 };	
 
 /**	 
@@ -15589,20 +15602,45 @@ picnet.ui.filter.GenericListFilter.prototype.getFilterStateForFilter = function(
  * @param {!Array.<picnet.ui.filter.FilterState>} filterStates
  */
 picnet.ui.filter.GenericListFilter.prototype.saveFiltersToCookie = function(filterStates) {			
-	if (!this.options['enableCookies']) { return; }
-    var val = [];
-    for (var i = 0; i < filterStates.length; i++) {
-        if (val.length > 0) val.push('|');
-        var state = filterStates[i];        
-        val.push(state.id);
-        val.push(',');
-        val.push(state.idx);
-        val.push(',');
-        val.push(state.type);
-        val.push(',');
-        val.push(state.value);
-    }        
-	goog.net.cookies.set(this.filterKey, val.join(''), 999999);
+  if (!this.options['enableCookies']) { return; }
+  var val = [];
+  var additionalFilter = [];
+  var additionalFilterValueCookieId = null;
+  for (var i = 0; i < filterStates.length; i++) {
+    var state = filterStates[i];
+    val = this.addFilterStateToStringArray(val, state);
+    additionalFilterValueCookieId = this.options['additionalFilterValueCookieId'];
+    if (this.options['additionalFilterTriggers'] && additionalFilterValueCookieId) 
+    {
+      for (var j = 0; j < this.options['additionalFilterTriggers'].length; j++) {
+        if (state.id === this.options['additionalFilterTriggers'][j].getAttribute('id')) {
+          additionalFilter = this.addFilterStateToStringArray(additionalFilter, state);
+        }
+      }
+    }
+  }        
+  goog.net.cookies.set(this.filterKey, val.join(''), 999999);
+  if (this.options['additionalFilterTriggers'] && additionalFilterValueCookieId) {
+    goog.net.cookies.set(additionalFilterValueCookieId, additionalFilter.join(''), 999999); 
+  }
+};
+
+/**
+ * @private
+ * @param {!Array.<string>} cookieStringValue
+ * @param {picnet.ui.filter.FilterState} filterState
+ * @return {!Array.<string>}
+ */
+picnet.ui.filter.GenericListFilter.prototype.addFilterStateToStringArray = function(cookieStringArray, filterState) {					
+  if (cookieStringArray.length > 0) cookieStringArray.push('|');
+  cookieStringArray.push(filterState.id);
+  cookieStringArray.push(',');
+  cookieStringArray.push(filterState.idx);
+  cookieStringArray.push(',');
+  cookieStringArray.push(filterState.type);
+  cookieStringArray.push(',');
+  cookieStringArray.push(filterState.value);
+  return cookieStringArray;
 };
 
 /**
@@ -15610,7 +15648,7 @@ picnet.ui.filter.GenericListFilter.prototype.saveFiltersToCookie = function(filt
  * @param {!Array.<picnet.ui.filter.FilterState>} filterStates
  * @param {boolean} setValueOnFilter
  */
-picnet.ui.filter.GenericListFilter  .prototype.applyFilterStates = function(filterStates, setValueOnFilter) {					
+picnet.ui.filter.GenericListFilter.prototype.applyFilterStates = function(filterStates, setValueOnFilter) {					
 	if (this.options['filteringElements']) this.options['filteringElements'](filterStates);
 	this.applyFilterStatesImpl(filterStates, setValueOnFilter);
 	if (this.options['filteredElements']) this.options['filteredElements'](filterStates);
