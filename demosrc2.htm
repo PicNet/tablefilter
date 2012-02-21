@@ -9,6 +9,15 @@
         $('#test-list').tableFilter({
           additionalFilterTriggers: [$('#test-filter')]
       })});
+
+      function addRow() {
+          var tr = $('<tr>' +
+                  '<td>Thomas Johansson ' + Math.floor(Math.random() * 500) + '</td>' +
+                  '<td>Tennis</td>' +
+                  '</tr>');
+          $('#test-list tbody').append(tr);
+          $('#test-list').tableFilterReset();
+      }
     </script>
 
 <style type='text/css'>
@@ -136,6 +145,7 @@ hr {
 </head>
 <body>  
 
+  <a href="javascript: addRow(); ">Add a row to the table</a>
   <p>
     <input id="test-filter" type="text" class="search-query">
   </p>

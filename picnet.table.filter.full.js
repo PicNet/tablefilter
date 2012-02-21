@@ -15918,6 +15918,8 @@ picnet.ui.filter.TableFilter.prototype.getFilterTable = function() { return (thi
  * @private
  */
 picnet.ui.filter.TableFilter.prototype.buildFiltersRow = function() {
+  var filterRow = goog.dom.getElementsByTagNameAndClass('tr', 'filters', this.thead);
+  if (filterRow.length > 0) return;
   var tr = goog.dom.createDom('tr', { 'class': 'filters' });
   for (var i = 0; i < this.headers.length; i++) {
     var header = this.headers[i];
@@ -16088,6 +16090,9 @@ if (jq) {
                 picnet.ui.filter.TableFilter.superClass_.refresh.call(tf);
             };
 
+             plugin.reset = function () {
+                picnet.ui.filter.TableFilter.superClass_.resetList.call(tf);
+            };
             plugin.init();
 
         };
@@ -16109,6 +16114,17 @@ if (jq) {
 	                 jq(t).data('tableFilter') !== null) {
                     var plugin = jq(t).data('tableFilter');
                     plugin.refresh();
+                }
+            });
+            return tmp;
+        };
+      
+       jq['fn']['tableFilterReset'] = function (options) {
+            var tmp = goog.array.forEach(this, function (t) {
+                if (undefined !== jq(t).data('tableFilter') &&
+	                 jq(t).data('tableFilter') !== null) {
+                    var plugin = jq(t).data('tableFilter');
+                    plugin.reset();
                 }
             });
             return tmp;

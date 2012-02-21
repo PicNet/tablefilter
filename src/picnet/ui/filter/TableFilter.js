@@ -117,6 +117,8 @@ picnet.ui.filter.TableFilter.prototype.getFilterTable = function() { return (thi
  * @private
  */
 picnet.ui.filter.TableFilter.prototype.buildFiltersRow = function() {
+  var filterRow = goog.dom.getElementsByTagNameAndClass('tr', 'filters', this.thead);
+  if (filterRow.length > 0) return;
   var tr = goog.dom.createDom('tr', { 'class': 'filters' });
   for (var i = 0; i < this.headers.length; i++) {
     var header = this.headers[i];
