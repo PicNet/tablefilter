@@ -59,11 +59,24 @@ picnet.ui.filter.TableFilter.grididx = 0;
 /**
  * @inheritDoc
  */
-picnet.ui.filter.TableFilter.prototype.initialiseFilters = function() {		    
-	this.thead = goog.dom.getElementsByTagNameAndClass('thead', null, this.options['frozenHeaderTable'] || this.list)[0];
-	this.tbody = goog.dom.getElementsByTagNameAndClass('tbody', null, this.list)[0];
-
-    picnet.ui.filter.TableFilter.superClass_.initialiseFilters.call(this);    
+picnet.ui.filter.TableFilter.prototype.initialiseFilters = function() {
+  this.tbody = goog.dom.getElementsByTagNameAndClass('tbody', null, this.list)[0];
+  this.thead = goog.dom.getElementsByTagNameAndClass('thead', null, this.options['frozenHeaderTable'] || this.list)[0];
+  
+  if (!this.thead) {
+    var trTableRow = goog.dom.getElementsByTagNameAndClass('tr', null, this.tbody)[0];
+    var tdCells = goog.dom.getElementsByTagNameAndClass('td', null, trTableRow);
+    var thead = goog.dom.createDom('thead', null);
+    goog.dom.insertChildAt(this.list, thead, 0);
+    for (var i = 0; i < tdCells.length; i++) {
+      var th = goog.dom.createDom('th', null);
+      th.innerHTML = 'col' + i;
+      goog.dom.appendChild(thead, th);
+    }
+    
+    this.thead = thead;
+  }
+  picnet.ui.filter.TableFilter.superClass_.initialiseFilters.call(this);
 };
 
 /**
@@ -104,26 +117,32 @@ picnet.ui.filter.TableFilter.prototype.getFilterTable = function() { return (thi
  * @private
  */
 picnet.ui.filter.TableFilter.prototype.buildFiltersRow = function() {
-    var tr = goog.dom.createDom('tr', {'class':'filters'});
-    for (var i = 0; i < this.headers.length; i++) {
-        var header = this.headers[i];				
-		var visible = goog.style.isElementShown(header);		
-		if (!visible) { continue; }
-			
-		var headerText = header.getAttribute('filter') === 'false' || !visible ? '' : goog.dom.getTextContent(header);
-		var filterClass = header.getAttribute('filter-class');
-		/** @type Element */ 
-		var td;
-		if (headerText && headerText.length > 1) {
-			var filter = this.getFilterDom(i, header);
-			goog.style.setStyle(filter, 'width', '95%');
-			td = goog.dom.createDom('td', null, filter);												
-		} else { td = goog.dom.createDom('td', {}, ''); }						
-			
-		if (filterClass) { goog.dom.classes.add(td, filterClass); }
-		goog.dom.appendChild(tr, td);					            
-    }	
-	goog.dom.appendChild(this.thead, tr);        
+  var tr = goog.dom.createDom('tr', { 'class': 'filters' });
+  for (var i = 0; i < this.headers.length; i++) {
+    var header = this.headers[i];
+    var visible = goog.style.isElementShown(header);
+    if (!visible) {
+      continue;
+    }
+
+    var headerText = header.getAttribute('filter') === 'false' || !visible ? '' : goog.dom.getTextContent(header);
+    var filterClass = header.getAttribute('filter-class');
+    /** @type Element */
+    var td;
+    if (headerText && headerText.length > 1) {
+      var filter = this.getFilterDom(i, header);
+      goog.style.setStyle(filter, 'width', '95%');
+      td = goog.dom.createDom('td', null, filter);
+    } else {
+      td = goog.dom.createDom('td', { }, '');
+    }
+
+    if (filterClass) {
+      goog.dom.classes.add(td, filterClass);
+    }
+    goog.dom.appendChild(tr, td);
+  }
+  goog.dom.appendChild(this.thead, tr);
 };
 
 /**

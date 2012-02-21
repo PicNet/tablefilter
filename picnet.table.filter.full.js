@@ -266,7 +266,7 @@ goog.addDependency = function(relPath, provides, requires) {
 
 
 
-// NOTE(user): The debug DOM loader was included in base.js as an orignal
+// NOTE(nnaze): The debug DOM loader was included in base.js as an orignal
 // way to do "debug-mode" development.  The dependency system can sometimes
 // be confusing, as can the debug DOM loader's asyncronous nature.
 //
@@ -724,52 +724,6 @@ goog.typeOf = function(value) {
 
 
 /**
- * Safe way to test whether a property is enumarable.  It allows testing
- * for enumerable on objects where 'propertyIsEnumerable' is overridden or
- * does not exist (like DOM nodes in IE). Does not use browser native
- * Object.propertyIsEnumerable.
- * @param {Object} object The object to test if the property is enumerable.
- * @param {string} propName The property name to check for.
- * @return {boolean} True if the property is enumarable.
- * @private
- */
-goog.propertyIsEnumerableCustom_ = function(object, propName) {
-  // KJS in Safari 2 is not ECMAScript compatible and lacks crucial methods
-  // such as propertyIsEnumerable.  We therefore use a workaround.
-  // Does anyone know a more efficient work around?
-  if (propName in object) {
-    for (var key in object) {
-      if (key == propName &&
-          Object.prototype.hasOwnProperty.call(object, propName)) {
-        return true;
-      }
-    }
-  }
-  return false;
-};
-
-
-/**
- * Safe way to test whether a property is enumarable.  It allows testing
- * for enumerable on objects where 'propertyIsEnumerable' is overridden or
- * does not exist (like DOM nodes in IE).
- * @param {Object} object The object to test if the property is enumerable.
- * @param {string} propName The property name to check for.
- * @return {boolean} True if the property is enumarable.
- * @private
- */
-goog.propertyIsEnumerable_ = function(object, propName) {
-  // In IE if object is from another window, cannot use propertyIsEnumerable
-  // from this window's Object. Will raise a 'JScript object expected' error.
-  if (object instanceof Object) {
-    return Object.prototype.propertyIsEnumerable.call(object, propName);
-  } else {
-    return goog.propertyIsEnumerableCustom_(object, propName);
-  }
-};
-
-
-/**
  * Returns true if the specified value is not |undefined|.
  * WARNING: Do not use this to test if an object has a property. Use the in
  * operator instead.  Additionally, this function assumes that the global
@@ -884,8 +838,10 @@ goog.isFunction = function(val) {
  * @return {boolean} Whether variable is an object.
  */
 goog.isObject = function(val) {
-  var type = goog.typeOf(val);
-  return type == 'object' || type == 'array' || type == 'function';
+  var type = typeof val;
+  return type == 'object' && val != null || type == 'function';
+  // return Object(val) === val also works, but is slower, especially if val is
+  // not an object.
 };
 
 
@@ -1006,7 +962,7 @@ goog.cloneObject = function(obj) {
  * compiler can better support duck-typing constructs as used in
  * goog.cloneObject.
  *
- * TODO(user): Remove once the JSCompiler can infer that the check for
+ * TODO(brenneman): Remove once the JSCompiler can infer that the check for
  * proto.clone is safe in goog.cloneObject.
  *
  * @type {Function}
@@ -3272,7 +3228,7 @@ goog.userAgent.isDocumentModeCache_ = {};
 goog.userAgent.isDocumentMode = function(documentMode) {
   return goog.userAgent.isDocumentModeCache_[documentMode] ||
       (goog.userAgent.isDocumentModeCache_[documentMode] = goog.userAgent.IE &&
-      document.documentMode && document.documentMode >= documentMode);
+      !!document.documentMode && document.documentMode >= documentMode);
 };
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
 //
@@ -4325,7 +4281,6 @@ goog.debug.Error.prototype.name = 'CustomError';
  * but it will remove bar() because it assumes it does not have side-effects.
  *
  */
-
 goog.provide('goog.asserts');
 goog.provide('goog.asserts.AssertionError');
 
@@ -6724,6 +6679,7 @@ goog.dom.TagName = {
   ADDRESS: 'ADDRESS',
   APPLET: 'APPLET',
   AREA: 'AREA',
+  AUDIO: 'AUDIO',
   B: 'B',
   BASE: 'BASE',
   BASEFONT: 'BASEFONT',
@@ -6809,7 +6765,8 @@ goog.dom.TagName = {
   TT: 'TT',
   U: 'U',
   UL: 'UL',
-  VAR: 'VAR'
+  VAR: 'VAR',
+  VIDEO: 'VIDEO'
 };
 // Copyright 2010 The Closure Library Authors. All Rights Reserved.
 //
@@ -7304,7 +7261,7 @@ goog.dom.getViewportSize_ = function(win) {
 
   if (goog.userAgent.WEBKIT && !goog.userAgent.isVersion('500') &&
       !goog.userAgent.MOBILE) {
-    // TODO(user): Sometimes we get something that isn't a valid window
+    // TODO(doughtie): Sometimes we get something that isn't a valid window
     // object. In this case we just revert to the current window. We need to
     // figure out when this happens and find a real fix for it.
     // See the comments on goog.dom.getWindow.
@@ -11239,6 +11196,7 @@ goog.style.getScrollbarWidth = function(opt_className) {
 /**
  * @fileoverview Definition of the disposable interface.  A disposable object
  * has a dispose method to to clean up references and resources.
+ * @author nnaze@google.com (Nathan Naze)
  */
 
 
@@ -15902,11 +15860,24 @@ picnet.ui.filter.TableFilter.grididx = 0;
 /**
  * @inheritDoc
  */
-picnet.ui.filter.TableFilter.prototype.initialiseFilters = function() {		    
-	this.thead = goog.dom.getElementsByTagNameAndClass('thead', null, this.options['frozenHeaderTable'] || this.list)[0];
-	this.tbody = goog.dom.getElementsByTagNameAndClass('tbody', null, this.list)[0];
-
-    picnet.ui.filter.TableFilter.superClass_.initialiseFilters.call(this);    
+picnet.ui.filter.TableFilter.prototype.initialiseFilters = function() {
+  this.tbody = goog.dom.getElementsByTagNameAndClass('tbody', null, this.list)[0];
+  this.thead = goog.dom.getElementsByTagNameAndClass('thead', null, this.options['frozenHeaderTable'] || this.list)[0];
+  
+  if (!this.thead) {
+    var trTableRow = goog.dom.getElementsByTagNameAndClass('tr', null, this.tbody)[0];
+    var tdCells = goog.dom.getElementsByTagNameAndClass('td', null, trTableRow);
+    var thead = goog.dom.createDom('thead', null);
+    goog.dom.insertChildAt(this.list, thead, 0);
+    for (var i = 0; i < tdCells.length; i++) {
+      var th = goog.dom.createDom('th', null);
+      th.innerHTML = 'col' + i;
+      goog.dom.appendChild(thead, th);
+    }
+    
+    this.thead = thead;
+  }
+  picnet.ui.filter.TableFilter.superClass_.initialiseFilters.call(this);
 };
 
 /**
@@ -15947,26 +15918,32 @@ picnet.ui.filter.TableFilter.prototype.getFilterTable = function() { return (thi
  * @private
  */
 picnet.ui.filter.TableFilter.prototype.buildFiltersRow = function() {
-    var tr = goog.dom.createDom('tr', {'class':'filters'});
-    for (var i = 0; i < this.headers.length; i++) {
-        var header = this.headers[i];				
-		var visible = goog.style.isElementShown(header);		
-		if (!visible) { continue; }
-			
-		var headerText = header.getAttribute('filter') === 'false' || !visible ? '' : goog.dom.getTextContent(header);
-		var filterClass = header.getAttribute('filter-class');
-		/** @type Element */ 
-		var td;
-		if (headerText && headerText.length > 1) {
-			var filter = this.getFilterDom(i, header);
-			goog.style.setStyle(filter, 'width', '95%');
-			td = goog.dom.createDom('td', null, filter);												
-		} else { td = goog.dom.createDom('td', {}, ''); }						
-			
-		if (filterClass) { goog.dom.classes.add(td, filterClass); }
-		goog.dom.appendChild(tr, td);					            
-    }	
-	goog.dom.appendChild(this.thead, tr);        
+  var tr = goog.dom.createDom('tr', { 'class': 'filters' });
+  for (var i = 0; i < this.headers.length; i++) {
+    var header = this.headers[i];
+    var visible = goog.style.isElementShown(header);
+    if (!visible) {
+      continue;
+    }
+
+    var headerText = header.getAttribute('filter') === 'false' || !visible ? '' : goog.dom.getTextContent(header);
+    var filterClass = header.getAttribute('filter-class');
+    /** @type Element */
+    var td;
+    if (headerText && headerText.length > 1) {
+      var filter = this.getFilterDom(i, header);
+      goog.style.setStyle(filter, 'width', '95%');
+      td = goog.dom.createDom('td', null, filter);
+    } else {
+      td = goog.dom.createDom('td', { }, '');
+    }
+
+    if (filterClass) {
+      goog.dom.classes.add(td, filterClass);
+    }
+    goog.dom.appendChild(tr, td);
+  }
+  goog.dom.appendChild(this.thead, tr);
 };
 
 /**
