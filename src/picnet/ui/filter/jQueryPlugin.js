@@ -25,8 +25,8 @@ if (jq) {
                 picnet.ui.filter.TableFilter.superClass_.refresh.call(tf);
             };
 
-             plugin.reset = function () {
-                picnet.ui.filter.TableFilter.superClass_.resetList.call(tf);
+             plugin.reset = function (list) {
+                picnet.ui.filter.TableFilter.superClass_.resetList.call(tf, list);
             };
             plugin.init();
 
@@ -43,7 +43,7 @@ if (jq) {
             return tmp;
         };
 
-        jq['fn']['tableFilterRefresh'] = function (options) {
+        jq['fn']['tableFilterApplyFilterValues'] = function (options) {
             var tmp = goog.array.forEach(this, function (t) {
                 if (undefined !== jq(t).data('tableFilter') &&
 	                 jq(t).data('tableFilter') !== null) {
@@ -54,12 +54,12 @@ if (jq) {
             return tmp;
         };
       
-       jq['fn']['tableFilterReset'] = function (options) {
+       jq['fn']['tableFilterRefresh'] = function (options) {
             var tmp = goog.array.forEach(this, function (t) {
                 if (undefined !== jq(t).data('tableFilter') &&
 	                 jq(t).data('tableFilter') !== null) {
                     var plugin = jq(t).data('tableFilter');
-                    plugin.reset();
+                    plugin.reset(t);
                 }
             });
             return tmp;

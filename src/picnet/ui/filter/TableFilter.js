@@ -68,10 +68,12 @@ picnet.ui.filter.TableFilter.prototype.initialiseFilters = function() {
     var tdCells = goog.dom.getElementsByTagNameAndClass('td', null, trTableRow);
     var thead = goog.dom.createDom('thead', null);
     goog.dom.insertChildAt(this.list, thead, 0);
+    var tr = goog.dom.createDom('tr', null);
+    goog.dom.appendChild(thead, tr);
     for (var i = 0; i < tdCells.length; i++) {
       var th = goog.dom.createDom('th', null);
       th.innerHTML = 'col' + i;
-      goog.dom.appendChild(thead, th);
+      goog.dom.appendChild(tr, th);
     }
     
     this.thead = thead;
@@ -83,7 +85,14 @@ picnet.ui.filter.TableFilter.prototype.initialiseFilters = function() {
  * @inheritDoc
  */
 picnet.ui.filter.TableFilter.prototype.initialiseControlCaches = function () {
-    this.headers = /** @type {!Array.<!Element>} */(goog.dom.getElementsByTagNameAndClass('th', null, this.thead));
+    var headerRows = /** @type {!Array.<!Element>} */(goog.dom.getElementsByTagNameAndClass('tr', null, this.thead));
+    var filterRow = /** @type {!Array.<!Element>} */(goog.dom.getElementsByTagNameAndClass('tr', 'filters', this.thead));
+    if (headerRows.length > 1 && filterRow.length > 0) {
+      this.headers = /** @type {!Array.<!Element>} */(goog.dom.getElementsByTagNameAndClass('th', null, headerRows[headerRows.length-2]));
+    } else if (headerRows.length > 0) {
+      this.headers = /** @type {!Array.<!Element>} */(goog.dom.getElementsByTagNameAndClass('th', null, headerRows[headerRows.length-1]));
+    } 
+    
     this.listItems = /** @type {!Array.<!Element>} */(goog.dom.getElementsByTagNameAndClass('tr', null, this.tbody));
     this.buildFiltersRow();
     var tHeadFilters = goog.dom.getElementsByTagNameAndClass('tr', 'filters', this.thead)[0];
@@ -131,7 +140,7 @@ picnet.ui.filter.TableFilter.prototype.buildFiltersRow = function() {
     var filterClass = header.getAttribute('filter-class');
     /** @type Element */
     var td;
-    if (headerText && headerText.length > 1) {
+    if (headerText && headerText.length > 0) {
       var filter = this.getFilterDom(i, header);
       goog.style.setStyle(filter, 'width', '95%');
       td = goog.dom.createDom('td', null, filter);

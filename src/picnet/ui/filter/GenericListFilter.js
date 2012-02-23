@@ -315,7 +315,7 @@ picnet.ui.filter.GenericListFilter.prototype.saveFiltersToCookie = function(filt
 
 /**
  * @private
- * @param {!Array.<string>} cookieStringValue
+ * @param {!Array.<string>} cookieStringArray
  * @param {picnet.ui.filter.FilterState} filterState
  * @return {!Array.<string>}
  */
