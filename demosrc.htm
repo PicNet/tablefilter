@@ -17,7 +17,7 @@
                   '<td>' + parseInt(10 + Math.random() * 18) + '/' + parseInt(10 + Math.random() * 2) + '/2009</td>' +
                   '<td></td>' +
                   '</tr>');
-                $('#demotable1 tbody').append(tr);
+                $('#demotablesrc1 tbody').append(tr);
             }
 
             for (var i = 0; i < 50; i++) {
@@ -42,7 +42,7 @@
                 }
             };
 
-            $('#demotable1').tableFilter(options1);
+            $('#demotablesrc1').tableFilter(options1);
 
             var grid2 = $('#demotable2');
             var options2 = {
@@ -204,7 +204,7 @@ hr {
     <h3>Additional Filters for Table 1</h3>
     Only Show Yes: <input type='checkbox' id='onlyyes'/>          
     Only Show No: <input type='checkbox' id='onlyno'/>
-        &nbsp;<input type='submit' value='Set Quick Find filter and refresh table' onclick="$('#quickfind').val('12'); $('#demotable1').tableFilterApplyFilterValues();"/>
+        &nbsp;<input type='submit' value='Set Quick Find filter and refresh table' onclick="$('#quickfind').val('12'); $('#demotablesrc1').tableFilterApplyFilterValues();"/>
     <br/>      <br/>    
     Quick Find: <input type='text' id='quickfind'/>
 
@@ -213,7 +213,7 @@ hr {
     <br/>
     <div class='column1'>  
       <h3>Table 1</h3>
-      <table id='demotable1'>
+      <table id='demotablesrc1'>
         <thead>
           <tr><th>Text Column 1</th><th>Number Column</th><th>Yes/No Column</th><th filter-type='ddl'>List Column</th><th filter='false'>No Filter</th><th>Date Column</th><th filter='false'>Empty</th></tr>
         </thead>

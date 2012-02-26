@@ -47,5 +47,5 @@ picnet.ui.filter.GenericListFilterOptions.prototype['filteringElements'] = null;
  * @export
  * @type {string}
  */
-picnet.ui.filter.GenericListFilterOptions.prototype['additionalFilterValueCookieId'] = null;
+picnet.ui.filter.GenericListFilterOptions.prototype['sharedCookieId'] = null;
 

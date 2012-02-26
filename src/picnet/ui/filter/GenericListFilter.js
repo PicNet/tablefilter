@@ -106,12 +106,19 @@ picnet.ui.filter.GenericListFilter.prototype.resetList = function(list) {
 /**
  * @protected	 
  */
-picnet.ui.filter.GenericListFilter.prototype.initialiseFilters = function() {		    
-	var listid = this.list.getAttribute('id') || this.list.getAttribute('name') || '';
-    this.filterKey = listid + '_' + (++picnet.ui.filter.GenericListFilter.filteridx) + '_filters';
-    this.initialiseControlCaches();            
-    this.registerListenersOnFilters();            
-    this.loadFiltersFromCookie();
+picnet.ui.filter.GenericListFilter.prototype.getListId = function() {
+  return this.list.getAttribute('id') || this.list.getAttribute('name') || '';
+};
+
+/**
+ * @protected	 
+ */
+picnet.ui.filter.GenericListFilter.prototype.initialiseFilters = function() {
+  var listid = this.getListId();
+  this.filterKey = listid + '_' + (++picnet.ui.filter.GenericListFilter.filteridx) + '_filters';
+  this.initialiseControlCaches();
+  this.registerListenersOnFilters();
+  this.loadFiltersFromCookie();
 };
 
 /**
@@ -193,28 +200,62 @@ picnet.ui.filter.GenericListFilter.prototype.initialiseControlCaches = function(
  */
 picnet.ui.filter.GenericListFilter.prototype.loadFiltersFromCookie = function() {									
   var filterState = this.options['enableCookies'] && goog.net.cookies.get(this.filterKey);
+  var states = /** @type{!Array.<picnet.ui.filter.FilterState>} */ ([]);
   if (filterState) {
     filterState = filterState.split('|');
-    var states = /** @type{!Array.<picnet.ui.filter.FilterState>} */ ([]);
     for (var i = 0; i < filterState.length; i++) {
       var state = filterState[i].split(',');
       states.push(new picnet.ui.filter.FilterState(state[0], state[3], parseInt(state[1], 10), state[2]));
     }
-    this.applyFilterStates(states, true);
   }
-  var additionalFilterValueCookieId = this.options['additionalFilterValueCookieId'];
-  if (additionalFilterValueCookieId) {
-    var additionalFilterStates = this.options['enableCookies'] && goog.net.cookies.get(additionalFilterValueCookieId);
-    if (!additionalFilterStates) { return; }
+  var sharedCookieId = this.options['sharedCookieId'];
+  if (sharedCookieId) {
+    var additionalFilterStates = this.options['enableCookies'] && goog.net.cookies.get(sharedCookieId);
+    if (!additionalFilterStates) {
+      return;
+    }
     additionalFilterStates = additionalFilterStates.split('|');
     var additionalStates = /** @type{!Array.<picnet.ui.filter.FilterState>} */ ([]);
     for (var i = 0; i < additionalFilterStates.length; i++) {
       var additionalState = additionalFilterStates[i].split(',');
-      additionalStates.push(new picnet.ui.filter.FilterState(additionalState[0], additionalState[3], parseInt(additionalState[1], 10), additionalState[2]));
-    }			
-    this.applyFilterStates(additionalStates, true);
+      var stateHeaderTextOrAdditionalFilterId = additionalState[0];
+          
+      if (stateHeaderTextOrAdditionalFilterId.charAt(0) == '#') {
+        additionalStates.push(new picnet.ui.filter.FilterState(stateHeaderTextOrAdditionalFilterId.substr(1), additionalState[3], -1, additionalState[2]));
+        continue;
+      }
+      
+      for (var headerIndex = 0; headerIndex < this.headers.length; headerIndex++) {
+        var header = this.headers[headerIndex];
+        var visible = goog.style.isElementShown(header);
+        var headerText = header.getAttribute('filter') === 'false' || !visible ? null : goog.dom.getTextContent(header);
+
+        if (headerText && headerText == stateHeaderTextOrAdditionalFilterId) {
+          var filter = this.filters[this.filterColumnIndexes.indexOf(headerIndex)];
+          var filterId = filter.getAttribute('id');
+          additionalStates.push(new picnet.ui.filter.FilterState(filterId, additionalState[3], headerIndex, additionalState[2]));
+          continue;
+        }
+      }
+    }
+
+    
+    for(var k = 0; k < additionalStates.length; k++) {
+      var found = false;  
+      for(var j = 0; j < states.length; j++) {
+        if (additionalStates[k].id == states[j].id) {
+          states[j].value = additionalStates[k].value;
+          found = true;
+        }
+      }
+      if (!found) {
+        states.push(additionalStates[k]);
+      }
+    }
+
+    this.applyFilterStates(states, true);
   }
-};	
+};
 
 /**	 
  * @private
@@ -276,7 +317,7 @@ picnet.ui.filter.GenericListFilter.prototype.getFilterStateForFilter = function(
             value = filter.selectedIndex === 0 ? null : filter.options[filter.selectedIndex].value;
             break;
         case 'checkbox':
-			value = filter.checked;
+			      value = filter.checked;
             break;
         default:
             throw 'Filter type ' + type + ' is not supported';
@@ -291,25 +332,32 @@ picnet.ui.filter.GenericListFilter.prototype.getFilterStateForFilter = function(
  */
 picnet.ui.filter.GenericListFilter.prototype.saveFiltersToCookie = function(filterStates) {			
   if (!this.options['enableCookies']) { return; }
-  var val = [];
-  var additionalFilter = [];
-  var additionalFilterValueCookieId = null;
+  var filterStatesById = [];
+  var filterStatesByHeaderText = [];
+  var sharedCookieId = null;
   for (var i = 0; i < filterStates.length; i++) {
     var state = filterStates[i];
-    val = this.addFilterStateToStringArray(val, state);
-    additionalFilterValueCookieId = this.options['additionalFilterValueCookieId'];
-    if (this.options['additionalFilterTriggers'] && additionalFilterValueCookieId) 
-    {
-      for (var j = 0; j < this.options['additionalFilterTriggers'].length; j++) {
-        if (state.id === this.options['additionalFilterTriggers'][j].getAttribute('id')) {
-          additionalFilter = this.addFilterStateToStringArray(additionalFilter, state);
-        }
+    filterStatesById = this.addFilterStateToStringArray(filterStatesById, state);
+
+    sharedCookieId = this.options['sharedCookieId'];
+    if (sharedCookieId) {
+      var headerText;
+      if (state.idx >= 0) {
+        var header = this.headers[state.idx];
+        var visible = goog.style.isElementShown(header);
+        headerText = header.getAttribute('filter') === 'false' || !visible ? null : goog.dom.getTextContent(header);
+      } else {
+        headerText = '#' + state.id;
       }
-    }
+      if (headerText) {
+        var stateByHeaderText = new picnet.ui.filter.FilterState(headerText, state.value, state.idx, state.type);
+        filterStatesByHeaderText = this.addFilterStateToStringArray(filterStatesByHeaderText, stateByHeaderText);
+      }
+    } 
   }        
-  goog.net.cookies.set(this.filterKey, val.join(''), 999999);
-  if (this.options['additionalFilterTriggers'] && additionalFilterValueCookieId) {
-    goog.net.cookies.set(additionalFilterValueCookieId, additionalFilter.join(''), 999999); 
+  goog.net.cookies.set(this.filterKey, filterStatesById.join(''), 999999);
+  if (sharedCookieId) {
+    goog.net.cookies.set(sharedCookieId, filterStatesByHeaderText.join(''), 999999);
   }
 };
 
@@ -353,35 +401,39 @@ picnet.ui.filter.GenericListFilter.prototype.applyFilterStatesImpl = function(fi
         return;
     }								
     if (filterStates === null || filterStates.length === 0) { this.applyStateToElements(null); }
-    else {			
-        for (var i = 0; i < filterStates.length; i++) {
-            var state = filterStates[i];
-            if (setValueOnFilter && state.type && state.id) {					
-				var filter = goog.dom.getElement(state.id);
-				if (filter.length === 0) { throw 'Could not find the speficied filter: ' + state.id; }
-						
-                switch (state.type) {
-                    case 'select-one':
-						goog.array.forEach(filter.options, function(o, idx) {
-							if (o.value === state.value) { o.setAttribute('selected', 'selected'); filter.selectedIndex = idx; }
-							else o.removeAttribute('selected');
-						});
-						break;
-                    case 'text':							
-                        filter.value = state.value;
-                        break;
-                    case 'checkbox':
-						filter.checked = state.value === 'true';							
-                        break;
-                    default:
-                        throw 'Filter type ' + state.type + ' is not supported';
-                }
-            }					
-            this.applyStateToElements(state);
+    else {
+      for (var i = 0; i < filterStates.length; i++) {
+        var state = filterStates[i];
+        if (setValueOnFilter && state.type && state.id) {
+          var filter = goog.dom.getElement(state.id);
+          if (!filter || filter.length === 0) {
+            continue;
+          }
+
+          switch (state.type) {
+          case 'select-one':
+            goog.array.forEach(filter.options, function(o, idx) {
+              if (o.value === state.value) {
+                o.setAttribute('selected', 'selected');
+                filter.selectedIndex = idx;
+              } else o.removeAttribute('selected');
+            });
+            break;
+          case 'text':
+            filter.value = state.value;
+            break;
+          case 'checkbox':
+            filter.checked = state.value === 'true';
+            break;
+          default:
+            throw 'Filter type ' + state.type + ' is not supported';
+          }
         }
+        this.applyStateToElements(state);
+      }
     }
 
-    this.hideElementsThatDoNotMatchAnyFiltres();			
+  this.hideElementsThatDoNotMatchAnyFiltres();			
 };
 
 /**

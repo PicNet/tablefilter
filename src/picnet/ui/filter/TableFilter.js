@@ -165,7 +165,7 @@ picnet.ui.filter.TableFilter.prototype.buildFiltersRow = function() {
 picnet.ui.filter.TableFilter.prototype.getFilterDom = function(colIdx, header) {
     var filterType = header.getAttribute('filter-type') || 'text';
     switch (filterType) {
-        case 'text': return goog.dom.createDom('input', {'type':'text','id':'filter_' + colIdx,'class':'filter','title':this.options['filterToolTipMessage']});
+        case 'text': return goog.dom.createDom('input', {'type':'text','id': this.getListId() + '_filter_' + colIdx,'class':'filter','title':this.options['filterToolTipMessage']});
         case 'ddl': return this.getSelectFilter(colIdx, header);
         default: throw 'filter-type: ' + filterType + ' is not supported';
     }
@@ -178,7 +178,7 @@ picnet.ui.filter.TableFilter.prototype.getFilterDom = function(colIdx, header) {
  * @return {!Element}
  */
 picnet.ui.filter.TableFilter.prototype.getSelectFilter = function(colIdx, header) {
-    var select = goog.dom.createDom('select', {'id':'filter_' + colIdx,'class':'filter'}, goog.dom.createDom('option', {}, this.options['selectOptionLabel']));
+    var select = goog.dom.createDom('select', {'id': this.getListId() + '_filter_' + colIdx,'class':'filter'}, goog.dom.createDom('option', {}, this.options['selectOptionLabel']));
     var cells = goog.array.map(this.listItems, function(r) {
 		return r.cells[colIdx];
 	});		
