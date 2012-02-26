@@ -15522,9 +15522,8 @@ picnet.ui.filter.GenericListFilter.prototype.loadFiltersFromCookie = function() 
         states.push(additionalStates[k]);
       }
     }
-
-    this.applyFilterStates(states, true);
   }
+  this.applyFilterStates(states, true);
 };
 
 /**	 
