@@ -11179,7 +11179,19 @@ goog.style.getScrollbarWidth = function(opt_className) {
   goog.dom.removeNode(outerDiv);
   return width;
 };
-// Copyright 2011 The Closure Library Authors. All Rights Reserved.
+
+goog.provide('picnet.ui.filter.ArrayExtension');
+
+if (!Array.indexOf) {
+  Array.prototype.indexOf = function(obj, start) {
+    for (var i = (start || 0); i < this.length; i++) {
+      if (this[i] == obj) {
+        return i;
+      }
+    }
+    return -1;
+  };
+}// Copyright 2011 The Closure Library Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15859,6 +15871,7 @@ goog.require('goog.style');
 
 goog.require('picnet.ui.filter.TableFilterOptions');
 goog.require('picnet.ui.filter.GenericListFilter');
+goog.require('picnet.ui.filter.ArrayExtension');
 
 goog.provide('picnet.ui.filter.TableFilter');
 

@@ -7,6 +7,7 @@ goog.require('goog.style');
 
 goog.require('picnet.ui.filter.TableFilterOptions');
 goog.require('picnet.ui.filter.GenericListFilter');
+goog.require('picnet.ui.filter.ArrayExtension');
 
 goog.provide('picnet.ui.filter.TableFilter');
 
