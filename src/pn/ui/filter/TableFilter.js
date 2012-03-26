@@ -5,26 +5,25 @@ goog.require('goog.dom.classes');
 goog.require('goog.dom');
 goog.require('goog.style');
 
-goog.require('picnet.ui.filter.TableFilterOptions');
-goog.require('picnet.ui.filter.GenericListFilter');
-goog.require('picnet.ui.filter.ArrayExtension');
+goog.require('pn.ui.filter.TableFilterOptions');
+goog.require('pn.ui.filter.GenericListFilter');
 
-goog.provide('picnet.ui.filter.TableFilter');
+goog.provide('pn.ui.filter.TableFilter');
 
 /** 
  * @constructor
- * @extends {picnet.ui.filter.GenericListFilter}
+ * @extends {pn.ui.filter.GenericListFilter}
  * @export
  * 
  * @param {!Element} grid
- * @param {!picnet.ui.filter.TableFilterOptions} options
+ * @param {!pn.ui.filter.TableFilterOptions} options
  */
-picnet.ui.filter.TableFilter = function(grid, options) {    
+pn.ui.filter.TableFilter = function(grid, options) {    
 	// Backwards compatibility
 	if (options['matchingRow']) options['matchingElement'] = options['matchingRow'];
 	if (options['filteringRows']) options['filteringElements'] = options['filteringRows'];
 	if (options['filteredRows']) options['filteredElements'] = options['filteredRows'];
-    picnet.ui.filter.GenericListFilter.call(this, null, grid, options);
+    pn.ui.filter.GenericListFilter.call(this, null, grid, options);
 
 	/** 
      * @private
@@ -47,20 +46,20 @@ picnet.ui.filter.TableFilter = function(grid, options) {
 	 */
     this.tbody;		    	
 };
-goog.inherits(picnet.ui.filter.TableFilter, picnet.ui.filter.GenericListFilter);
+goog.inherits(pn.ui.filter.TableFilter, pn.ui.filter.GenericListFilter);
 
 
 /** 
 * @private
 * @type {number}
 */
-picnet.ui.filter.TableFilter.grididx = 0;
+pn.ui.filter.TableFilter.grididx = 0;
 
 
 /**
  * @inheritDoc
  */
-picnet.ui.filter.TableFilter.prototype.initialiseFilters = function() {
+pn.ui.filter.TableFilter.prototype.initialiseFilters = function() {
   this.tbody = goog.dom.getElementsByTagNameAndClass('tbody', null, this.list)[0];
   this.thead = goog.dom.getElementsByTagNameAndClass('thead', null, this.options['frozenHeaderTable'] || this.list)[0];
   
@@ -79,13 +78,13 @@ picnet.ui.filter.TableFilter.prototype.initialiseFilters = function() {
     
     this.thead = thead;
   }
-  picnet.ui.filter.TableFilter.superClass_.initialiseFilters.call(this);
+  pn.ui.filter.TableFilter.superClass_.initialiseFilters.call(this);
 };
 
 /**
  * @inheritDoc
  */
-picnet.ui.filter.TableFilter.prototype.initialiseControlCaches = function () {
+pn.ui.filter.TableFilter.prototype.initialiseControlCaches = function () {
     var headerRows = /** @type {!Array.<!Element>} */(goog.dom.getElementsByTagNameAndClass('tr', null, this.thead));
     var filterRow = /** @type {!Array.<!Element>} */(goog.dom.getElementsByTagNameAndClass('tr', 'filters', this.thead));
     if (headerRows.length > 1 && filterRow.length > 0) {
@@ -110,7 +109,7 @@ picnet.ui.filter.TableFilter.prototype.initialiseControlCaches = function () {
  * @param {!Element} f
  * @return {number}
  */	
-picnet.ui.filter.TableFilter.prototype.getColumnIndexOfFilter = function(f) {
+pn.ui.filter.TableFilter.prototype.getColumnIndexOfFilter = function(f) {
 	var td = goog.dom.getAncestorByTagNameAndClass(f, goog.dom.TagName.TD);
 	var tr = goog.dom.getAncestorByTagNameAndClass(td, goog.dom.TagName.TR);
 	var cells = /** @type {!Array.<!Element>} */ (tr.getElementsByTagName('td'));		
@@ -121,12 +120,12 @@ picnet.ui.filter.TableFilter.prototype.getColumnIndexOfFilter = function(f) {
  * @private
  * @return {!Element}
  */
-picnet.ui.filter.TableFilter.prototype.getFilterTable = function() { return (this.options['frozenHeaderTable'] || this.list); };
+pn.ui.filter.TableFilter.prototype.getFilterTable = function() { return (this.options['frozenHeaderTable'] || this.list); };
 
 /**
  * @private
  */
-picnet.ui.filter.TableFilter.prototype.buildFiltersRow = function() {
+pn.ui.filter.TableFilter.prototype.buildFiltersRow = function() {
   var filterRow = goog.dom.getElementsByTagNameAndClass('tr', 'filters', this.thead);
   if (filterRow.length > 0) return;
   var tr = goog.dom.createDom('tr', { 'class': 'filters' });
@@ -163,7 +162,7 @@ picnet.ui.filter.TableFilter.prototype.buildFiltersRow = function() {
  * @param {!Element} header
  * @return {!Element}
  */
-picnet.ui.filter.TableFilter.prototype.getFilterDom = function(colIdx, header) {
+pn.ui.filter.TableFilter.prototype.getFilterDom = function(colIdx, header) {
     var filterType = header.getAttribute('filter-type') || 'text';
     switch (filterType) {
         case 'text': return goog.dom.createDom('input', {'type':'text','id': this.getListId() + '_filter_' + colIdx,'class':'filter','title':this.options['filterToolTipMessage']});
@@ -178,7 +177,7 @@ picnet.ui.filter.TableFilter.prototype.getFilterDom = function(colIdx, header) {
  * @param {!Element} header
  * @return {!Element}
  */
-picnet.ui.filter.TableFilter.prototype.getSelectFilter = function(colIdx, header) {
+pn.ui.filter.TableFilter.prototype.getSelectFilter = function(colIdx, header) {
     var select = goog.dom.createDom('select', {'id': this.getListId() + '_filter_' + colIdx,'class':'filter'}, goog.dom.createDom('option', {}, this.options['selectOptionLabel']));
     var cells = goog.array.map(this.listItems, function(r) {
 		return r.cells[colIdx];
@@ -201,7 +200,7 @@ picnet.ui.filter.TableFilter.prototype.getSelectFilter = function(colIdx, header
 /**	 
  * @inheritDoc
  */	
-picnet.ui.filter.TableFilter.prototype.getFilterStates = function() {
+pn.ui.filter.TableFilter.prototype.getFilterStates = function() {
     var filterStates = [];
 
     for (var i = 0; i < this.filters.length; i++) {
@@ -221,8 +220,8 @@ picnet.ui.filter.TableFilter.prototype.getFilterStates = function() {
 /**
  * @inheritDoc
  */
-picnet.ui.filter.TableFilter.prototype.getFilterStateForFilter = function(filter) {		
-    var state = picnet.ui.filter.TableFilter.superClass_.getFilterStateForFilter.call(this, filter);    
+pn.ui.filter.TableFilter.prototype.getFilterStateForFilter = function(filter) {		
+    var state = pn.ui.filter.TableFilter.superClass_.getFilterStateForFilter.call(this, filter);    
     if (state) {
         state.idx = this.getColumnIndexOfCurrentFilter(filter);
     }    	
@@ -235,7 +234,7 @@ picnet.ui.filter.TableFilter.prototype.getFilterStateForFilter = function(filter
  * @param {Element} filter
  * @return {number}
  */
-picnet.ui.filter.TableFilter.prototype.getColumnIndexOfCurrentFilter = function(filter) {        
+pn.ui.filter.TableFilter.prototype.getColumnIndexOfCurrentFilter = function(filter) {        
 	var filterCell = goog.dom.getAncestorByTagNameAndClass(filter, goog.dom.TagName.TD);
     if (!filterCell || filterCell.length <= 0) { return -1; }        
 	var filterRow = goog.dom.getAncestorByTagNameAndClass(filterCell, goog.dom.TagName.TR);
@@ -245,7 +244,7 @@ picnet.ui.filter.TableFilter.prototype.getColumnIndexOfCurrentFilter = function(
 /**
  * @inheritDoc
  */
-picnet.ui.filter.TableFilter.prototype.doesElementContainText = function (state, tr, textTokens) {
+pn.ui.filter.TableFilter.prototype.doesElementContainText = function (state, tr, textTokens) {
   var cells = tr.getElementsByTagName('td');
   var columnIdx = state === null ? -1 : state.idx;
   if (columnIdx < 0) {
@@ -256,17 +255,17 @@ picnet.ui.filter.TableFilter.prototype.doesElementContainText = function (state,
       if (!visible || header.getAttribute('filter') === 'false') { continue; }
       txt.push(goog.string.trim(goog.dom.getTextContent(cells[i])));
     }
-    return picnet.ui.filter.TableFilter.superClass_.doesElementContainText.call(this, state, tr, textTokens, txt.join('\t'));
+    return pn.ui.filter.TableFilter.superClass_.doesElementContainText.call(this, state, tr, textTokens, txt.join('\t'));
   }
   else {
-    return picnet.ui.filter.TableFilter.superClass_.doesElementContainText.call(this, state, cells[columnIdx], textTokens);
+    return pn.ui.filter.TableFilter.superClass_.doesElementContainText.call(this, state, cells[columnIdx], textTokens);
   }
 
 };
 
 /** @inheritDoc */
-picnet.ui.filter.TableFilter.prototype.disposeInternal = function() {
-    picnet.ui.filter.TableFilter.superClass_.disposeInternal.call(this);
+pn.ui.filter.TableFilter.prototype.disposeInternal = function() {
+    pn.ui.filter.TableFilter.superClass_.disposeInternal.call(this);
 
 	delete this.filterColumnIndexes;	
     delete this.headers;	

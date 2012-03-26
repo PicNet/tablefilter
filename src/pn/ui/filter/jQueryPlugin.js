@@ -1,10 +1,10 @@
 ﻿
 goog.require('goog.array');
 
-goog.require('picnet.ui.filter.TableFilterOptions');
-goog.require('picnet.ui.filter.TableFilter');
+goog.require('pn.ui.filter.TableFilterOptions');
+goog.require('pn.ui.filter.TableFilter');
 
-goog.provide('picnet.ui.filter.jQueryPlugin');
+goog.provide('pn.ui.filter.jQueryPlugin');
 
 // This is the only public method.  Initialised like:
 // $(#tableid).tableFilter(options)
@@ -16,17 +16,17 @@ if (jq) {
             var tf;
             var plugin = this;
             plugin.init = function () {
-                var tfo = new picnet.ui.filter.TableFilterOptions();
+                var tfo = new pn.ui.filter.TableFilterOptions();
                 var options = jq['extend']({}, tfo, opts);
-                tf = new picnet.ui.filter.TableFilter(element, options);
+                tf = new pn.ui.filter.TableFilter(element, options);
             };
 
             plugin.refresh = function () {
-                picnet.ui.filter.TableFilter.superClass_.refresh.call(tf);
+                pn.ui.filter.TableFilter.superClass_.refresh.call(tf);
             };
 
              plugin.reset = function (list) {
-                picnet.ui.filter.TableFilter.superClass_.resetList.call(tf, list);
+                pn.ui.filter.TableFilter.superClass_.resetList.call(tf, list);
             };
             plugin.init();
 

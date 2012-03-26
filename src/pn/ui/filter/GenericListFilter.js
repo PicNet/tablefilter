@@ -8,11 +8,11 @@ goog.require('goog.style');
 goog.require('goog.Disposable');
 goog.require('goog.Timer');
 
-goog.require('picnet.ui.filter.FilterState');
-goog.require('picnet.ui.filter.GenericListFilterOptions');
-goog.require('picnet.ui.filter.SearchEngine');
+goog.require('pn.ui.filter.FilterState');
+goog.require('pn.ui.filter.GenericListFilterOptions');
+goog.require('pn.ui.filter.SearchEngine');
 
-goog.provide('picnet.ui.filter.GenericListFilter');
+goog.provide('pn.ui.filter.GenericListFilter');
 
 /** 
  * @constructor
@@ -21,9 +21,9 @@ goog.provide('picnet.ui.filter.GenericListFilter');
  *
  * @param {Element} filterInput
  * @param {!Element} list
- * @param {!picnet.ui.filter.GenericListFilterOptions} options
+ * @param {!pn.ui.filter.GenericListFilterOptions} options
  */
-picnet.ui.filter.GenericListFilter = function(filterInput, list, options) {    
+pn.ui.filter.GenericListFilter = function(filterInput, list, options) {    
     goog.Disposable.call(this);
 
     /**
@@ -33,7 +33,7 @@ picnet.ui.filter.GenericListFilter = function(filterInput, list, options) {
 	this.list = list;	
     /**
 	 * @protected
-	 * @type {!picnet.ui.filter.GenericListFilterOptions}
+	 * @type {!pn.ui.filter.GenericListFilterOptions}
 	 */
 	this.options = options;	
 
@@ -80,25 +80,25 @@ picnet.ui.filter.GenericListFilter = function(filterInput, list, options) {
 	
     /**
      * @private
-     * @type {!picnet.ui.filter.SearchEngine}            
+     * @type {!pn.ui.filter.SearchEngine}            
      */
-     this.search = new picnet.ui.filter.SearchEngine();
+     this.search = new pn.ui.filter.SearchEngine();
 
 	this.initialiseFilters(); // Initialise
 };
-goog.inherits(picnet.ui.filter.GenericListFilter, goog.Disposable);
+goog.inherits(pn.ui.filter.GenericListFilter, goog.Disposable);
 
 
 /** 
 * @private
 * @type {number}
 */
-picnet.ui.filter.GenericListFilter.filteridx = 0;
+pn.ui.filter.GenericListFilter.filteridx = 0;
 
 /**
  * @param {!Element} list
  */
-picnet.ui.filter.GenericListFilter.prototype.resetList = function(list) {	
+pn.ui.filter.GenericListFilter.prototype.resetList = function(list) {	
 	this.list = list;
 	this.initialiseControlCaches();
 };
@@ -106,16 +106,16 @@ picnet.ui.filter.GenericListFilter.prototype.resetList = function(list) {
 /**
  * @protected	 
  */
-picnet.ui.filter.GenericListFilter.prototype.getListId = function() {
+pn.ui.filter.GenericListFilter.prototype.getListId = function() {
   return this.list.getAttribute('id') || this.list.getAttribute('name') || '';
 };
 
 /**
  * @protected	 
  */
-picnet.ui.filter.GenericListFilter.prototype.initialiseFilters = function() {
+pn.ui.filter.GenericListFilter.prototype.initialiseFilters = function() {
   var listid = this.getListId();
-  this.filterKey = listid + '_' + (++picnet.ui.filter.GenericListFilter.filteridx) + '_filters';
+  this.filterKey = listid + '_' + (++pn.ui.filter.GenericListFilter.filteridx) + '_filters';
   this.initialiseControlCaches();
   this.registerListenersOnFilters();
   this.loadFiltersFromCookie();
@@ -124,7 +124,7 @@ picnet.ui.filter.GenericListFilter.prototype.initialiseFilters = function() {
 /**
  * @private	 
  */
-picnet.ui.filter.GenericListFilter.prototype.registerListenersOnFilters = function () {
+pn.ui.filter.GenericListFilter.prototype.registerListenersOnFilters = function () {
     goog.array.forEach(this.filters, function (filter) {
         this.eventHandler.listen(filter, filter.getAttribute('type') === 'text' ? goog.events.EventType.KEYUP : goog.events.EventType.CHANGE, this.onFilterChanged, false, this);
     }, this);
@@ -163,7 +163,7 @@ picnet.ui.filter.GenericListFilter.prototype.registerListenersOnFilters = functi
 
 /** 
  */
-picnet.ui.filter.GenericListFilter.prototype.clearAllFilters = function() {	
+pn.ui.filter.GenericListFilter.prototype.clearAllFilters = function() {	
     goog.array.forEach(this.filters, this.clearFilterValue, this);
     if (this.options['additionalFilterTriggers']) {
 		goog.array.forEach(this.options['additionalFilterTriggers'], this.clearFilterValue, this);            
@@ -171,7 +171,7 @@ picnet.ui.filter.GenericListFilter.prototype.clearAllFilters = function() {
     this.refresh();
 };
 	
-picnet.ui.filter.GenericListFilter.prototype.clearFilterValue = function(f) {		
+pn.ui.filter.GenericListFilter.prototype.clearFilterValue = function(f) {		
 	var type = f.options ? 'select-one' : f.getAttribute('type');
 	switch (type) {
 		case 'select-one':
@@ -191,21 +191,21 @@ picnet.ui.filter.GenericListFilter.prototype.clearFilterValue = function(f) {
 /**
  * @protected
  */
-picnet.ui.filter.GenericListFilter.prototype.initialiseControlCaches = function() {					
+pn.ui.filter.GenericListFilter.prototype.initialiseControlCaches = function() {					
     this.listItems = /** @type {!Array.<!Element>} */ (this.list.childNodes);
 };
 
 /**
  * @private
  */
-picnet.ui.filter.GenericListFilter.prototype.loadFiltersFromCookie = function() {									
+pn.ui.filter.GenericListFilter.prototype.loadFiltersFromCookie = function() {									
   var filterState = this.options['enableCookies'] && goog.net.cookies.get(this.filterKey);
-  var states = /** @type{!Array.<picnet.ui.filter.FilterState>} */ ([]);
+  var states = /** @type{!Array.<pn.ui.filter.FilterState>} */ ([]);
   if (filterState) {
     filterState = filterState.split('|');
     for (var i = 0; i < filterState.length; i++) {
       var state = filterState[i].split(',');
-      states.push(new picnet.ui.filter.FilterState(state[0], state[3], parseInt(state[1], 10), state[2]));
+      states.push(new pn.ui.filter.FilterState(state[0], state[3], parseInt(state[1], 10), state[2]));
     }
   }
   var sharedCookieId = this.options['sharedCookieId'];
@@ -215,13 +215,13 @@ picnet.ui.filter.GenericListFilter.prototype.loadFiltersFromCookie = function() 
       return;
     }
     additionalFilterStates = additionalFilterStates.split('|');
-    var additionalStates = /** @type{!Array.<picnet.ui.filter.FilterState>} */ ([]);
+    var additionalStates = /** @type{!Array.<pn.ui.filter.FilterState>} */ ([]);
     for (var i = 0; i < additionalFilterStates.length; i++) {
       var additionalState = additionalFilterStates[i].split(',');
       var stateHeaderTextOrAdditionalFilterId = additionalState[0];
           
       if (stateHeaderTextOrAdditionalFilterId.charAt(0) == '#') {
-        additionalStates.push(new picnet.ui.filter.FilterState(stateHeaderTextOrAdditionalFilterId.substr(1), additionalState[3], -1, additionalState[2]));
+        additionalStates.push(new pn.ui.filter.FilterState(stateHeaderTextOrAdditionalFilterId.substr(1), additionalState[3], -1, additionalState[2]));
         continue;
       }
       
@@ -233,7 +233,7 @@ picnet.ui.filter.GenericListFilter.prototype.loadFiltersFromCookie = function() 
         if (headerText && headerText == stateHeaderTextOrAdditionalFilterId) {
           var filter = this.filters[this.filterColumnIndexes.indexOf(headerIndex)];
           var filterId = filter.getAttribute('id');
-          additionalStates.push(new picnet.ui.filter.FilterState(filterId, additionalState[3], headerIndex, additionalState[2]));
+          additionalStates.push(new pn.ui.filter.FilterState(filterId, additionalState[3], headerIndex, additionalState[2]));
           continue;
         }
       }
@@ -260,7 +260,7 @@ picnet.ui.filter.GenericListFilter.prototype.loadFiltersFromCookie = function() 
  * @private
  * @param {!Event} e
  */
-picnet.ui.filter.GenericListFilter.prototype.onFilterChanged = function (e) {    
+pn.ui.filter.GenericListFilter.prototype.onFilterChanged = function (e) {    
     this.lastkeytime = new Date().getTime();
     this.quickFindTimer();
 };
@@ -268,7 +268,7 @@ picnet.ui.filter.GenericListFilter.prototype.onFilterChanged = function (e) {
 /**	 
  * @private	 
  */	
-picnet.ui.filter.GenericListFilter.prototype.quickFindTimer = function() {
+pn.ui.filter.GenericListFilter.prototype.quickFindTimer = function() {
     if (this.lastTimerID) { clearTimeout(this.lastTimerID); this.lastTimerID = 0; }
     this.cancelQuickFind = true;
 
@@ -283,7 +283,7 @@ picnet.ui.filter.GenericListFilter.prototype.quickFindTimer = function() {
 
 /**	 
  */	
-picnet.ui.filter.GenericListFilter.prototype.refresh = function() {
+pn.ui.filter.GenericListFilter.prototype.refresh = function() {
     this.cancelQuickFind = false;
     clearTimeout(this.lastTimerID);
     var filterStates = this.getFilterStates();			
@@ -293,9 +293,9 @@ picnet.ui.filter.GenericListFilter.prototype.refresh = function() {
 
 /**	 
  * @protected
- * @return {!Array.<picnet.ui.filter.FilterState>}
+ * @return {!Array.<pn.ui.filter.FilterState>}
  */	
-picnet.ui.filter.GenericListFilter.prototype.getFilterStates = function() {
+pn.ui.filter.GenericListFilter.prototype.getFilterStates = function() {
     var state = this.getFilterStateForFilter(this.filterInput);
     return state ? [state] : [];
 };
@@ -303,9 +303,9 @@ picnet.ui.filter.GenericListFilter.prototype.getFilterStates = function() {
 /**
  * @protected
  * @param {Element} filter
- * @return {picnet.ui.filter.FilterState}
+ * @return {pn.ui.filter.FilterState}
  */
-picnet.ui.filter.GenericListFilter.prototype.getFilterStateForFilter = function(filter) {			
+pn.ui.filter.GenericListFilter.prototype.getFilterStateForFilter = function(filter) {			
     var type = filter.options ? 'select-one' : filter.getAttribute('type');		
     var value;		
     switch (type) {
@@ -322,14 +322,14 @@ picnet.ui.filter.GenericListFilter.prototype.getFilterStateForFilter = function(
             throw 'Filter type ' + type + ' is not supported';
     }
     if (value === null || value.length <= 0) { return null; }    		
-	return new picnet.ui.filter.FilterState(filter.getAttribute('id'), value, 0, type);
+	return new pn.ui.filter.FilterState(filter.getAttribute('id'), value, 0, type);
 };
 
 /**
  * @private
- * @param {!Array.<picnet.ui.filter.FilterState>} filterStates
+ * @param {!Array.<pn.ui.filter.FilterState>} filterStates
  */
-picnet.ui.filter.GenericListFilter.prototype.saveFiltersToCookie = function(filterStates) {			
+pn.ui.filter.GenericListFilter.prototype.saveFiltersToCookie = function(filterStates) {			
   if (!this.options['enableCookies']) { return; }
   var filterStatesById = [];
   var filterStatesByHeaderText = [];
@@ -349,7 +349,7 @@ picnet.ui.filter.GenericListFilter.prototype.saveFiltersToCookie = function(filt
         headerText = '#' + state.id;
       }
       if (headerText) {
-        var stateByHeaderText = new picnet.ui.filter.FilterState(headerText, state.value, state.idx, state.type);
+        var stateByHeaderText = new pn.ui.filter.FilterState(headerText, state.value, state.idx, state.type);
         filterStatesByHeaderText = this.addFilterStateToStringArray(filterStatesByHeaderText, stateByHeaderText);
       }
     } 
@@ -363,10 +363,10 @@ picnet.ui.filter.GenericListFilter.prototype.saveFiltersToCookie = function(filt
 /**
  * @private
  * @param {!Array.<string>} cookieStringArray
- * @param {picnet.ui.filter.FilterState} filterState
+ * @param {pn.ui.filter.FilterState} filterState
  * @return {!Array.<string>}
  */
-picnet.ui.filter.GenericListFilter.prototype.addFilterStateToStringArray = function(cookieStringArray, filterState) {					
+pn.ui.filter.GenericListFilter.prototype.addFilterStateToStringArray = function(cookieStringArray, filterState) {					
   if (cookieStringArray.length > 0) cookieStringArray.push('|');
   cookieStringArray.push(filterState.id);
   cookieStringArray.push(',');
@@ -380,20 +380,20 @@ picnet.ui.filter.GenericListFilter.prototype.addFilterStateToStringArray = funct
 
 /**
  * @private
- * @param {!Array.<picnet.ui.filter.FilterState>} filterStates
+ * @param {!Array.<pn.ui.filter.FilterState>} filterStates
  * @param {boolean} setValueOnFilter
  */
-picnet.ui.filter.GenericListFilter.prototype.applyFilterStates = function(filterStates, setValueOnFilter) {					
+pn.ui.filter.GenericListFilter.prototype.applyFilterStates = function(filterStates, setValueOnFilter) {					
 	if (this.options['filteringElements']) this.options['filteringElements'](filterStates);
 	this.applyFilterStatesImpl(filterStates, setValueOnFilter);
 	if (this.options['filteredElements']) this.options['filteredElements'](filterStates);
 };
 /**
  * @private
- * @param {!Array.<picnet.ui.filter.FilterState>} filterStates
+ * @param {!Array.<pn.ui.filter.FilterState>} filterStates
  * @param {boolean} setValueOnFilter
  */	
-picnet.ui.filter.GenericListFilter.prototype.applyFilterStatesImpl = function(filterStates, setValueOnFilter) {							
+pn.ui.filter.GenericListFilter.prototype.applyFilterStatesImpl = function(filterStates, setValueOnFilter) {							
     this.clearElementFilteredStates();
     if ((!filterStates || filterStates.length) === 0 && this.options['matchingElement']) {
         this.hideElementsThatDoNotMatchAnyFiltres();
@@ -438,15 +438,15 @@ picnet.ui.filter.GenericListFilter.prototype.applyFilterStatesImpl = function(fi
 /**
  * @private	 
  */
-picnet.ui.filter.GenericListFilter.prototype.clearElementFilteredStates = function() {
+pn.ui.filter.GenericListFilter.prototype.clearElementFilteredStates = function() {
     goog.array.forEach(this.listItems, function(r) { r.removeAttribute('filtermatch'); } );
 };
 
 /**
  * @private
- * @param {picnet.ui.filter.FilterState} filterState	 
+ * @param {pn.ui.filter.FilterState} filterState	 
  */
-picnet.ui.filter.GenericListFilter.prototype.applyStateToElements = function (filterState) {  
+pn.ui.filter.GenericListFilter.prototype.applyStateToElements = function (filterState) {  
   var normalisedTokens = this.getNormalisedSearchTokensForState(filterState);
   // if (!normalisedTokens) { return; } // TODO: Validate this
   
@@ -460,10 +460,10 @@ picnet.ui.filter.GenericListFilter.prototype.applyStateToElements = function (fi
 
 /**
  * @private
- * @param {picnet.ui.filter.FilterState} state
+ * @param {pn.ui.filter.FilterState} state
  * @return {Array.<string>}
  */
-picnet.ui.filter.GenericListFilter.prototype.getNormalisedSearchTokensForState = function(state) {
+pn.ui.filter.GenericListFilter.prototype.getNormalisedSearchTokensForState = function(state) {
     if (state === null) { return null; }
     switch (state.type) {
         case 'select-one':
@@ -480,7 +480,7 @@ picnet.ui.filter.GenericListFilter.prototype.getNormalisedSearchTokensForState =
 /**
  * @private	 
  */
-picnet.ui.filter.GenericListFilter.prototype.hideElementsThatDoNotMatchAnyFiltres =function() {
+pn.ui.filter.GenericListFilter.prototype.hideElementsThatDoNotMatchAnyFiltres =function() {
     for (var i = 0; i < this.listItems.length; i++) {
         if (this.cancelQuickFind) return;
         var item = this.listItems[i];
@@ -491,13 +491,13 @@ picnet.ui.filter.GenericListFilter.prototype.hideElementsThatDoNotMatchAnyFiltre
 
 /**
  * @protected
- * @param {picnet.ui.filter.FilterState} state
+ * @param {pn.ui.filter.FilterState} state
  * @param {!Element} item
  * @param {Array.<string>} textTokens
  * @param {string=} optText
  * @return {boolean}
  */
-picnet.ui.filter.GenericListFilter.prototype.doesElementContainText = function (state, item, textTokens, optText) {  
+pn.ui.filter.GenericListFilter.prototype.doesElementContainText = function (state, item, textTokens, optText) {  
   var exact = goog.isDefAndNotNull(state) && state.type === 'select-one';
   var matches = optText ?
     this.doesTextContainTextImpl(optText, textTokens, exact) :
@@ -508,12 +508,12 @@ picnet.ui.filter.GenericListFilter.prototype.doesElementContainText = function (
 	
 /**
  * @private	 
- * @param {picnet.ui.filter.FilterState} state
+ * @param {pn.ui.filter.FilterState} state
  * @param {!Element} item
  * @param {Array.<string>} textTokens	 
  * @return {boolean}
  */
-picnet.ui.filter.GenericListFilter.prototype.checkMatchingElementCallback = function(state, item, textTokens) {
+pn.ui.filter.GenericListFilter.prototype.checkMatchingElementCallback = function(state, item, textTokens) {
     if (!this.options['matchingElement']) return true;				
 	var object = item;
 	if (window['jQuery']) object = window['jQuery'](item);
@@ -527,7 +527,7 @@ picnet.ui.filter.GenericListFilter.prototype.checkMatchingElementCallback = func
  * @param {boolean} exact
  * @return {boolean}
  */
-picnet.ui.filter.GenericListFilter.prototype.doesTextContainText = function(item, textTokens, exact) {
+pn.ui.filter.GenericListFilter.prototype.doesTextContainText = function(item, textTokens, exact) {
   return this.doesTextContainTextImpl(goog.string.trim(goog.dom.getTextContent(item)), textTokens, exact); 
 };
 
@@ -538,13 +538,13 @@ picnet.ui.filter.GenericListFilter.prototype.doesTextContainText = function(item
  * @param {boolean} exact
  * @return {boolean}
  */
-picnet.ui.filter.GenericListFilter.prototype.doesTextContainTextImpl = function (text, textTokens, exact) {
+pn.ui.filter.GenericListFilter.prototype.doesTextContainTextImpl = function (text, textTokens, exact) {
   return this.search.doesTextMatchTokens(text, textTokens, exact); 
 };
 
 /** @inheritDoc */
-picnet.ui.filter.GenericListFilter.prototype.disposeInternal = function() {
-    picnet.ui.filter.GenericListFilter.superClass_.disposeInternal.call(this);
+pn.ui.filter.GenericListFilter.prototype.disposeInternal = function() {
+    pn.ui.filter.GenericListFilter.superClass_.disposeInternal.call(this);
 
 	goog.dispose(this.options);
 	goog.dispose(this.eventHandler);

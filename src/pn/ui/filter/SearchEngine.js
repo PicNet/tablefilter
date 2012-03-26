@@ -1,13 +1,14 @@
 
-goog.provide('picnet.ui.filter.SearchEngine');
+goog.provide('pn.ui.filter.SearchEngine');
 
 /**
  * @constructor
  */
-picnet.ui.filter.SearchEngine = function() {
+pn.ui.filter.SearchEngine = function() {
+
   /**
    * @private
-   * @type {Object.<number>}
+   * @enum {number}
    */
   this.precedences_ = {
     'or' :1,
@@ -17,12 +18,27 @@ picnet.ui.filter.SearchEngine = function() {
 };
 
 /**	 
+ * @param {string} text The text to match against the given expression
+ * @param {string} expression	The expression to use when evaluating the given
+ *    text
+ * @return {boolean} Wether the given expression matches the given text.
+ */
+pn.ui.filter.SearchEngine.prototype.matches = function(text, expression) {
+  if (!expression) return true;
+  if (!text) return false;
+
+  var tokens = this.parseSearchTokens(expression);
+  return this.doesTextMatchTokens(text, tokens, false);
+};
+
+/**	 
  * @param {string} textToMatch
  * @param {Array.<string>} postFixTokens	 
  * @param {boolean} exactMatch
  * @return {boolean}
  */
-picnet.ui.filter.SearchEngine.prototype.doesTextMatchTokens = function (textToMatch, postFixTokens, exactMatch) {
+pn.ui.filter.SearchEngine.prototype.doesTextMatchTokens = 
+    function (textToMatch, postFixTokens, exactMatch) {
 	if (!postFixTokens) return true;
 	textToMatch = exactMatch ? textToMatch : textToMatch.toLowerCase();
 	var stackResult = [];
@@ -32,10 +48,13 @@ picnet.ui.filter.SearchEngine.prototype.doesTextMatchTokens = function (textToMa
 	for (var i = 0; i < postFixTokens.length; i++) {
 		var token = postFixTokens[i];
 		if (token !== 'and' && token !== 'or' && token !== 'not') {
-			if (token.indexOf('>') === 0 || token.indexOf('<') === 0 || token.indexOf('=') === 0 || token.indexOf('!=') === 0) {
-				stackResult.push(this.doesNumberMatchToken(token, textToMatch));
+			if (token.indexOf('>') === 0 || token.indexOf('<') === 0 || 
+          token.indexOf('=') === 0 || token.indexOf('!=') === 0) {
+				stackResult.push(this.doesNumberMatchToken_(token, textToMatch));
 			} else {
-				stackResult.push(exactMatch ? textToMatch === token : textToMatch.indexOf(token) >= 0);
+				stackResult.push(exactMatch ? 
+            textToMatch === token : 
+            textToMatch.indexOf(token) >= 0);
 			}
 		}
 		else {
@@ -61,15 +80,16 @@ picnet.ui.filter.SearchEngine.prototype.doesTextMatchTokens = function (textToMa
 };
 
 /**	 
- * @param {string} text
- * @return {Array.<string>}
+ * @param {string} text The filter text to use when testing entry for match
+ * @return {Array.<string>} The normalized postfix tokens representation of
+ *    this text.
  */
-picnet.ui.filter.SearchEngine.prototype.parseSearchTokens = function(text) {
+pn.ui.filter.SearchEngine.prototype.parseSearchTokens = function(text) {
 	if (!text) { return null; }		
 	text = text.toLowerCase();
-	var normalisedTokens = this.normaliseExpression(text);
-	normalisedTokens = this.allowFriendlySearchTerms(normalisedTokens);
-	var asPostFix = this.convertExpressionToPostFix(normalisedTokens);
+	var normalisedTokens = this.normaliseExpression_(text);
+	normalisedTokens = this.allowFriendlySearchTerms_(normalisedTokens);
+	var asPostFix = this.convertExpressionToPostFix_(normalisedTokens);
 	var postFixTokens = asPostFix.split('|');
 	return postFixTokens;
 };
@@ -80,8 +100,9 @@ picnet.ui.filter.SearchEngine.prototype.parseSearchTokens = function(text) {
  * @param {string} text
  * @return {boolean}
  */
-picnet.ui.filter.SearchEngine.prototype.doesNumberMatchToken = function(token, text) {
-	var op,exp,actual = this.getNumberFrom(text);	
+pn.ui.filter.SearchEngine.prototype.doesNumberMatchToken_ = 
+    function(token, text) {
+	var op,exp,actual = this.getNumberFrom_(text);	
 	if (token.indexOf('=') === 0) {
 		op = '=';
 		exp = parseFloat(token.substring(1));
@@ -120,7 +141,7 @@ picnet.ui.filter.SearchEngine.prototype.doesNumberMatchToken = function(token, t
  * @param {string} txt
  * @return {number}
  */
-picnet.ui.filter.SearchEngine.prototype.getNumberFrom = function(txt) {
+pn.ui.filter.SearchEngine.prototype.getNumberFrom_ = function(txt) {
 	if (txt.charAt(0) === '$') {
 		txt = txt.substring(1);
 	}
@@ -132,14 +153,14 @@ picnet.ui.filter.SearchEngine.prototype.getNumberFrom = function(txt) {
  * @param {string} text
  * @return {!Array.<string>}
  */
-picnet.ui.filter.SearchEngine.prototype.normaliseExpression = function(text) {
-	var textTokens = this.getTokensFromExpression(text);
+pn.ui.filter.SearchEngine.prototype.normaliseExpression_ = function(text) {
+	var textTokens = this.getTokensFromExpression_(text);
 	var normalisedTokens = [];
 
 	for (var i = 0; i < textTokens.length; i++) {
 		var token = textTokens[i];
-		token = this.normaliseTerm(normalisedTokens, token, '(');
-		token = this.normaliseTerm(normalisedTokens, token, ')');
+		token = this.normaliseTerm_(normalisedTokens, token, '(');
+		token = this.normaliseTerm_(normalisedTokens, token, ')');
 
 		if (token.length > 0) { normalisedTokens.push(token); }
 	}
@@ -152,7 +173,8 @@ picnet.ui.filter.SearchEngine.prototype.normaliseExpression = function(text) {
  * @param {string} token
  * @param {string} term
  */
-picnet.ui.filter.SearchEngine.prototype.normaliseTerm = function(tokens, token, term) {
+pn.ui.filter.SearchEngine.prototype.normaliseTerm_ = 
+    function(tokens, token, term) {
 	var idx = token.indexOf(term);
 	while (idx !== -1) {
 		if (idx > 0) { tokens.push(token.substring(0, idx)); }
@@ -169,8 +191,9 @@ picnet.ui.filter.SearchEngine.prototype.normaliseTerm = function(tokens, token, 
  * @param {string} exp
  * @return {!Array.<string>}
  */
-picnet.ui.filter.SearchEngine.prototype.getTokensFromExpression = function(exp) {		
-	exp = exp.replace('>= ', '>=').replace('> ', '>').replace('<= ', '<=').replace('< ', '<').replace('!= ', '!=').replace('= ', '=');
+pn.ui.filter.SearchEngine.prototype.getTokensFromExpression_ = function(exp) {		
+	exp = exp.replace('>= ', '>=').replace('> ', '>').replace('<= ', '<=').
+      replace('< ', '<').replace('!= ', '!=').replace('= ', '=');
 	var regex = /([^"^\s]+)\s*|"([^"]+)"\s*/g;		
 	var matches = [];
 	var match = null;
@@ -183,7 +206,8 @@ picnet.ui.filter.SearchEngine.prototype.getTokensFromExpression = function(exp) 
  * @param {!Array.<string>} tokens
  * @return {!Array.<string>}
  */
-picnet.ui.filter.SearchEngine.prototype.allowFriendlySearchTerms = function(tokens) {
+pn.ui.filter.SearchEngine.prototype.allowFriendlySearchTerms_ = 
+    function(tokens) {
 	var newTokens = [];
 	var lastToken;
 
@@ -198,7 +222,9 @@ picnet.ui.filter.SearchEngine.prototype.allowFriendlySearchTerms = function(toke
 		if (!lastToken) {
 			newTokens.push(token);
 		} else {
-			if (lastToken !== '(' && lastToken !== 'not' && lastToken !== 'and' && lastToken !== 'or' && token !== 'and' && token !== 'or' && token !== ')') {
+			if (lastToken !== '(' && lastToken !== 'not' && lastToken !== 'and' && 
+          lastToken !== 'or' && token !== 'and' && token !== 'or' && 
+          token !== ')') {
 				newTokens.push('and');
 			}
 			newTokens.push(token);
@@ -213,14 +239,16 @@ picnet.ui.filter.SearchEngine.prototype.allowFriendlySearchTerms = function(toke
  * @param {!Array.<string>} normalisedTokens
  * @return {string}
  */
-picnet.ui.filter.SearchEngine.prototype.convertExpressionToPostFix = function(normalisedTokens) {
+pn.ui.filter.SearchEngine.prototype.convertExpressionToPostFix_ = 
+    function(normalisedTokens) {
 	var postFix = '';
 	var stackOps = [];
 	var stackOperator;
 	for (var i = 0; i < normalisedTokens.length; i++) {
 		var token = normalisedTokens[i];
 		if (token.length === 0) continue;
-		if (token !== 'and' && token !== 'or' && token !== 'not' && token !== '(' && token !== ')') {
+		if (token !== 'and' && token !== 'or' && token !== 'not' && 
+        token !== '(' && token !== ')') {
 			postFix = postFix + '|' + token;
 		}
 		else {
@@ -240,7 +268,8 @@ picnet.ui.filter.SearchEngine.prototype.convertExpressionToPostFix = function(no
 				} else {
 					while (stackOps.length !== 0) {
 						if (stackOps[stackOps.length - 1] === '(') { break; }
-						if (this.precedences_[stackOps[stackOps.length - 1]] > this.precedences_[token]) {
+						if (this.precedences_[stackOps[stackOps.length - 1]] > 
+                this.precedences_[token]) {
 							stackOperator = stackOps.pop();
 							postFix = postFix + '|' + stackOperator;
 						}

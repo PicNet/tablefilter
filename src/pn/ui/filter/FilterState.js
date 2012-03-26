@@ -1,5 +1,5 @@
 ﻿
-goog.provide('picnet.ui.filter.FilterState');
+goog.provide('pn.ui.filter.FilterState');
 
 /**
  * @constructor
@@ -8,7 +8,7 @@ goog.provide('picnet.ui.filter.FilterState');
  * @param {number} idx
  * @param {string} type
  */
-picnet.ui.filter.FilterState = function(id, value, idx, type) {
+pn.ui.filter.FilterState = function(id, value, idx, type) {
 	/** 
 	 * @type {string}
 	 */
@@ -31,4 +31,4 @@ picnet.ui.filter.FilterState = function(id, value, idx, type) {
  * @override
  * @return {string}
  */
-picnet.ui.filter.FilterState.prototype.toString = function() { return 'id[' + this.id + '] value[' + this.value + '] idx[' + this.idx + '] type[' + this.type + ']'; };
+pn.ui.filter.FilterState.prototype.toString = function() { return 'id[' + this.id + '] value[' + this.value + '] idx[' + this.idx + '] type[' + this.type + ']'; };
