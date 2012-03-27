@@ -1,60 +1,64 @@
-﻿
+﻿;
 goog.require('pn.ui.filter.FilterState');
 
 goog.provide('pn.ui.filter.GenericListFilterOptions');
 
+
+
 /**
- * @export
  * @constructor
+ * @extends {goog.Disposable}
  */
-pn.ui.filter.GenericListFilterOptions = function () {};
+pn.ui.filter.GenericListFilterOptions = function() {};
+
 
 /** @type {string} The default tooltip for the filter controls */
-pn.ui.filter.GenericListFilterOptions.DEFAULT_TOOLTIP = 
+pn.ui.filter.GenericListFilterOptions.DEFAULT_TOOLTIP =
     'Quotes (\") match phrases. (not) excludes a match from the results. (or)' +
     ' can be used to do Or searches. I.e. [red or blue] will match either red' +
     ' or blue. Numeric values support >=, >, <=, <, = and != operators.';
 
-/**
- * @export
- * @type {!Array.<!Element>}
- */
-pn.ui.filter.GenericListFilterOptions.prototype['additionalFilterTriggers'] = [];
-/**
- * @export
- * @type {!Array.<!Element>}
- */
+
+/** @type {!Array.<!Element>} */
+pn.ui.filter.GenericListFilterOptions.prototype['additionalFilterTriggers'] =
+    [];
+
+
+/** @type {!Array.<!Element>} */
 pn.ui.filter.GenericListFilterOptions.prototype['clearFiltersControls'] = [];
-/**
- * @export
- * @type {number}
- */
+
+
+/** @type {number} */
 pn.ui.filter.GenericListFilterOptions.prototype['filterDelay'] = 250;
-/**
- * @export
- * @type {string}
- */
-pn.ui.filter.GenericListFilterOptions.prototype['filterToolTipMessage'] = 
+
+
+/** @type {string} */
+pn.ui.filter.GenericListFilterOptions.prototype['filterToolTipMessage'] =
     pn.ui.filter.GenericListFilterOptions.DEFAULT_TOOLTIP;
 
-/**
- * @export
- * @type {boolean}
- */
+
+/** @type {boolean} */
 pn.ui.filter.GenericListFilterOptions.prototype['enableCookies'] = true;
-/**
- * @export
- * @type {function(pn.ui.filter.FilterState, !Element, Array.<string>)?}
- */
+
+
+/** @type {function(pn.ui.filter.FilterState, !Element, Array.<string>)?} */
 pn.ui.filter.GenericListFilterOptions.prototype['matchingElement'] = null;
-/**
- * @export
- * @type {function(!Array.<!pn.ui.filter.FilterState>)?}
- */
+
+
+/** @type {function(!Array.<!pn.ui.filter.FilterState>)?} */
 pn.ui.filter.GenericListFilterOptions.prototype['filteringElements'] = null;
-/**
- * @export
- * @type {string}
- */
+
+
+/** @type {string} */
 pn.ui.filter.GenericListFilterOptions.prototype['sharedCookieId'] = null;
 
+
+/** @inheritDoc */
+pn.ui.filter.GenericListFilterOptions.prototype.disposeInternal = function() {
+  pn.ui.filter.GenericListFilterOptions.superClass_.disposeInternal.call(this);
+
+  goog.array.forEach(this['additionalFilterTriggers'], goog.dispose);
+  goog.array.forEach(this['clearFiltersControls'], goog.dispose);
+
+  for (var i in this) { delete this[i]; }
+};

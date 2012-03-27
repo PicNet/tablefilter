@@ -1,248 +1,282 @@
-﻿
-goog.require('goog.net.cookies');
+﻿;
+goog.require('goog.Disposable');
+goog.require('goog.Timer');
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.events');
 goog.require('goog.events.EventHandler');
+goog.require('goog.net.cookies');
 goog.require('goog.style');
-goog.require('goog.Disposable');
-goog.require('goog.Timer');
-
 goog.require('pn.ui.filter.FilterState');
 goog.require('pn.ui.filter.GenericListFilterOptions');
 goog.require('pn.ui.filter.SearchEngine');
 
 goog.provide('pn.ui.filter.GenericListFilter');
 
-/** 
+
+
+/**
  * @constructor
  * @extends {goog.Disposable}
- * @export
  *
- * @param {Element} filterInput
- * @param {!Element} list
- * @param {!pn.ui.filter.GenericListFilterOptions} options
+ * @param {Element} input The DOM input control that will trigger the filter.
+ * @param {!Element} list The DOM list element to filter.
+ * @param {!pn.ui.filter.GenericListFilterOptions} options The options to
+ *    apply to this filtering.
  */
-pn.ui.filter.GenericListFilter = function(filterInput, list, options) {    
-    goog.Disposable.call(this);
+pn.ui.filter.GenericListFilter = function(input, list, options) {
+  goog.Disposable.call(this);
 
-    /**
-	 * @protected
-	 * @type {!Element}
-	 */
-	this.list = list;	
-    /**
-	 * @protected
-	 * @type {!pn.ui.filter.GenericListFilterOptions}
-	 */
-	this.options = options;	
+  /**
+   * @protected
+   * @type {!Element}
+   */
+  this.list = list;
 
-    /**
-     * @private
-     * @type {Element} filterInput
-     */
-     this.filterInput = filterInput;    
-     /** 
-      * @protected
-	  * @type {!Array.<!Element>}
-	  */
-    this.listItems;	    
-    /** 
-      * @protected
-	  * @type {!Array.<!Element>}
-	  */
-    this.filters = [this.filterInput];
-	/**
-	 * @private
-	 * @type {goog.events.EventHandler}
-	 */
-	this.eventHandler = new goog.events.EventHandler(this);	
-	/** 
-     * @private
-	 * @type {number}
-	 */
-	this.lastkeytime;
-	/** 
-     * @private
-	 * @type {number}
-	 */
-    this.lastTimerID;    
-	/** 
-     * @private
-	 * @type {boolean}
-	 */
-    this.cancelQuickFind;
-	/**
-     * @private 
-	 * @type {string}
-	 */
-    this.filterKey;        
-	
-    /**
-     * @private
-     * @type {!pn.ui.filter.SearchEngine}            
-     */
-     this.search = new pn.ui.filter.SearchEngine();
+  /**
+   * @protected
+   * @type {!pn.ui.filter.GenericListFilterOptions}
+   */
+  this.options = options;
 
-	this.initialiseFilters(); // Initialise
+  /**
+   * @private
+   * @type {Element} input
+   */
+  this.input_ = input;
+
+  /**
+   * @protected
+   * @type {!Array.<!Element>}
+   */
+  this.listItems = [];
+
+  /**
+   * @protected
+   * @type {!Array.<!Element>}
+   */
+  this.filters = [this.input_];
+
+  /**
+   * @private
+   * @type {goog.events.EventHandler}
+   */
+  this.eh_ = new goog.events.EventHandler(this);
+
+  /**
+   * @private
+   * @type {number}
+   */
+  this.lastkeytime_ = 0;
+
+  /**
+   * @private
+   * @type {number}
+   */
+  this.lastTimerID_ = 0;
+
+  /**
+   * @private
+   * @type {boolean}
+   */
+  this.cancelQuickFind_ = false;
+
+  /**
+   * @private
+   * @type {string}
+   */
+  this.filterKey_ = '';
+
+  /**
+   * @private
+   * @type {!pn.ui.filter.SearchEngine}
+   */
+  this.search_ = new pn.ui.filter.SearchEngine();
+
+  this.initialiseFilters(); // Initialise
 };
 goog.inherits(pn.ui.filter.GenericListFilter, goog.Disposable);
 
 
-/** 
-* @private
-* @type {number}
-*/
-pn.ui.filter.GenericListFilter.filteridx = 0;
-
 /**
- * @param {!Element} list
+ * @private
+ * @type {number}
  */
-pn.ui.filter.GenericListFilter.prototype.resetList = function(list) {	
-	this.list = list;
-	this.initialiseControlCaches();
+pn.ui.filter.GenericListFilter.filteridx_ = 0;
+
+
+/** @param {!Element} list The list to reset. */
+pn.ui.filter.GenericListFilter.prototype.resetList = function(list) {
+  goog.dispose(this.list);
+  goog.array.forEach(this.listItems, goog.dispose);
+
+  this.list = list;
+  this.initialiseControlCaches();
 };
 
+
 /**
- * @protected	 
+ * @protected
+ * @return {string} The id of the given list.
  */
 pn.ui.filter.GenericListFilter.prototype.getListId = function() {
   return this.list.getAttribute('id') || this.list.getAttribute('name') || '';
 };
 
-/**
- * @protected	 
- */
+
+/** @protected */
 pn.ui.filter.GenericListFilter.prototype.initialiseFilters = function() {
   var listid = this.getListId();
-  this.filterKey = listid + '_' + (++pn.ui.filter.GenericListFilter.filteridx) + '_filters';
+  this.filterKey_ = listid + '_' +
+      (++pn.ui.filter.GenericListFilter.filteridx_) + '_filters';
   this.initialiseControlCaches();
-  this.registerListenersOnFilters();
-  this.loadFiltersFromCookie();
+  this.registerListenersOnFilters_();
+  this.loadFiltersFromCookie_();
 };
 
-/**
- * @private	 
- */
-pn.ui.filter.GenericListFilter.prototype.registerListenersOnFilters = function () {
-    goog.array.forEach(this.filters, function (filter) {
-        this.eventHandler.listen(filter, filter.getAttribute('type') === 'text' ? goog.events.EventType.KEYUP : goog.events.EventType.CHANGE, this.onFilterChanged, false, this);
-    }, this);
 
-    if (this.options['clearFiltersControls']) {
-        for (var i = 0; i < this.options['clearFiltersControls'].length; i++) {
-            if (this.options['clearFiltersControls'][i].length) this.options['clearFiltersControls'][i] = this.options['clearFiltersControls'][i][0];
-            this.eventHandler.listen(this.options['clearFiltersControls'][i], goog.events.EventType.CLICK, this.clearAllFilters, false, this);
-        }
+/** @private */
+pn.ui.filter.GenericListFilter.prototype.registerListenersOnFilters_ =
+    function() {
+  goog.array.forEach(this.filters, function(filter) {
+    this.eh_.listen(filter, filter.getAttribute('type') === 'text' ?
+        goog.events.EventType.KEYUP :
+        goog.events.EventType.CHANGE,
+        this.onFilterChanged_, false, this);
+  }, this);
+
+  if (this.options['clearFiltersControls']) {
+    for (var i = 0; i < this.options['clearFiltersControls'].length; i++) {
+      if (this.options['clearFiltersControls'][i].length) {
+        this.options['clearFiltersControls'][i] =
+            this.options['clearFiltersControls'][i][0];
+      }
+      this.eh_.listen(this.options['clearFiltersControls'][i],
+          goog.events.EventType.CLICK, this.clearAllFilters, false, this);
+    }
+  }
+
+  if (!this.options['additionalFilterTriggers']) return;
+
+  for (i = 0; i < this.options['additionalFilterTriggers'].length; i++) {
+    /** @type {!Element} */
+    var trigger = this.options['additionalFilterTriggers'][i];
+    if (trigger.length) { // Remove jQueryObject
+      trigger = this.options['additionalFilterTriggers'][i] = trigger[0];
     }
 
-    if (!this.options['additionalFilterTriggers']) return;
-
-    for (i = 0; i < this.options['additionalFilterTriggers'].length; i++) {
-        /** @type {!Element} */
-        var trigger = this.options['additionalFilterTriggers'][i];
-        if (trigger.length) trigger = this.options['additionalFilterTriggers'][i] = trigger[0]; // Remove jQueryObject
-
-        var type = trigger.options ? 'select-one' : trigger.getAttribute('type');
-        switch (type) {
-            case 'select-one':
-                this.eventHandler.listen(trigger, goog.events.EventType.CHANGE, this.onFilterChanged, false, this);
-                break;
-            case 'text':
-                trigger.setAttribute('title', this.options['filterToolTipMessage']);
-                this.eventHandler.listen(trigger, goog.events.EventType.KEYUP, this.onFilterChanged, false, this);
-                break;
-            case 'checkbox':
-                this.eventHandler.listen(trigger, goog.events.EventType.CLICK, this.onFilterChanged, false, this);
-                break;
-            default:
-                throw 'Filter type ' + type + ' is not supported';
-        }
+    var type = trigger.options ? 'select-one' : trigger.getAttribute('type');
+    var et = goog.events.EventType;
+    switch (type) {
+      case 'select-one':
+        this.eh_.listen(trigger, et.CHANGE, this.onFilterChanged_, false, this);
+        break;
+      case 'text':
+        trigger.setAttribute('title', this.options['filterToolTipMessage']);
+        this.eh_.listen(trigger, et.KEYUP, this.onFilterChanged_, false, this);
+        break;
+      case 'checkbox':
+        this.eh_.listen(trigger, et.CLICK, this.onFilterChanged_, false, this);
+        break;
+      default:
+        throw 'Filter type ' + type + ' is not supported';
     }
+  }
 };
 
-/** 
- */
-pn.ui.filter.GenericListFilter.prototype.clearAllFilters = function() {	
-    goog.array.forEach(this.filters, this.clearFilterValue, this);
-    if (this.options['additionalFilterTriggers']) {
-		goog.array.forEach(this.options['additionalFilterTriggers'], this.clearFilterValue, this);            
-    }
-    this.refresh();
-};
-	
-pn.ui.filter.GenericListFilter.prototype.clearFilterValue = function(f) {		
-	var type = f.options ? 'select-one' : f.getAttribute('type');
-	switch (type) {
-		case 'select-one':
-			f.selectedIndex = 0;
-			break;
-		case 'text':
-			f.value = '';
-			break;
-		case 'checkbox':
-			f.checked = false;
-			break;
-		default:
-			throw 'Filter type ' + type + ' is not supported';
-	}
+
+/** Clears all filter values */
+pn.ui.filter.GenericListFilter.prototype.clearAllFilters = function() {
+  goog.array.forEach(this.filters, this.clearFilterValue, this);
+  if (this.options['additionalFilterTriggers']) {
+    goog.array.forEach(this.options['additionalFilterTriggers'],
+        this.clearFilterValue, this);
+  }
+  this.refresh();
 };
 
-/**
- * @protected
- */
-pn.ui.filter.GenericListFilter.prototype.initialiseControlCaches = function() {					
-    this.listItems = /** @type {!Array.<!Element>} */ (this.list.childNodes);
+
+/** @param {!Element} f The filter DOM element to clear. */
+pn.ui.filter.GenericListFilter.prototype.clearFilterValue = function(f) {
+  var type = f.options ? 'select-one' : f.getAttribute('type');
+  switch (type) {
+    case 'select-one':
+      f.selectedIndex = 0;
+      break;
+    case 'text':
+      f.value = '';
+      break;
+    case 'checkbox':
+      f.checked = false;
+      break;
+    default:
+      throw 'Filter type ' + type + ' is not supported';
+  }
 };
 
-/**
- * @private
- */
-pn.ui.filter.GenericListFilter.prototype.loadFiltersFromCookie = function() {									
-  var filterState = this.options['enableCookies'] && goog.net.cookies.get(this.filterKey);
-  var states = /** @type{!Array.<pn.ui.filter.FilterState>} */ ([]);
+
+/** @protected */
+pn.ui.filter.GenericListFilter.prototype.initialiseControlCaches = function() {
+  this.listItems = /** @type {!Array.<!Element>} */ (this.list.childNodes);
+};
+
+
+/** @private */
+pn.ui.filter.GenericListFilter.prototype.loadFiltersFromCookie_ = function() {
+  var filterState = this.options['enableCookies'] &&
+      goog.net.cookies.get(this.filterKey_);
+  var states = /** @type {!Array.<pn.ui.filter.FilterState>} */ ([]);
   if (filterState) {
     filterState = filterState.split('|');
     for (var i = 0; i < filterState.length; i++) {
-      var state = filterState[i].split(',');
-      states.push(new pn.ui.filter.FilterState(state[0], state[3], parseInt(state[1], 10), state[2]));
+      var s = filterState[i].split(',');
+      var idx = parseInt(s[1], 10);
+      var fs = new pn.ui.filter.FilterState(s[0], s[3], idx, s[2]);
+      states.push(fs);
     }
   }
   var sharedCookieId = this.options['sharedCookieId'];
   if (sharedCookieId) {
-    var additionalFilterStates = this.options['enableCookies'] && goog.net.cookies.get(sharedCookieId);
-    if (!additionalFilterStates) {
-      return;
-    }
+    var additionalFilterStates = this.options['enableCookies'] &&
+        goog.net.cookies.get(sharedCookieId);
+    if (!additionalFilterStates) { return; }
     additionalFilterStates = additionalFilterStates.split('|');
-    var additionalStates = /** @type{!Array.<pn.ui.filter.FilterState>} */ ([]);
+    var additionalStates = [];
     for (var i = 0; i < additionalFilterStates.length; i++) {
-      var additionalState = additionalFilterStates[i].split(',');
-      var stateHeaderTextOrAdditionalFilterId = additionalState[0];
-          
+      var state = additionalFilterStates[i].split(',');
+      var stateHeaderTextOrAdditionalFilterId = state[0];
+
       if (stateHeaderTextOrAdditionalFilterId.charAt(0) == '#') {
-        additionalStates.push(new pn.ui.filter.FilterState(stateHeaderTextOrAdditionalFilterId.substr(1), additionalState[3], -1, additionalState[2]));
+        var fs = new pn.ui.filter.FilterState(
+            stateHeaderTextOrAdditionalFilterId.substr(1),
+            state[3],
+            -1,
+            state[2]
+            );
+        additionalStates.push(fs);
         continue;
       }
-      
-      for (var headerIndex = 0; headerIndex < this.headers.length; headerIndex++) {
-        var header = this.headers[headerIndex];
+
+      for (var hidx = 0; hidx < this.headers.length; hidx++) {
+        var header = this.headers[hidx];
         var visible = goog.style.isElementShown(header);
-        var headerText = header.getAttribute('filter') === 'false' || !visible ? null : goog.dom.getTextContent(header);
+        var headerText = header.getAttribute('filter') === 'false' || !visible ?
+            null : goog.dom.getTextContent(header);
 
         if (headerText && headerText == stateHeaderTextOrAdditionalFilterId) {
-          var filter = this.filters[this.filterColumnIndexes.indexOf(headerIndex)];
-          var filterId = filter.getAttribute('id');
-          additionalStates.push(new pn.ui.filter.FilterState(filterId, additionalState[3], headerIndex, additionalState[2]));
+          var filter = this.filters[this.filterColumnIndexes.indexOf(hidx)];
+          var fid = filter.getAttribute('id');
+          var fs = new pn.ui.filter.FilterState(fid, state[3], hidx, state[2]);
+          additionalStates.push(fs);
           continue;
         }
       }
     }
 
-    
-    for(var k = 0; k < additionalStates.length; k++) {
-      var found = false;  
-      for(var j = 0; j < states.length; j++) {
+
+    for (var k = 0; k < additionalStates.length; k++) {
+      var found = false;
+      for (var j = 0; j < states.length; j++) {
         if (additionalStates[k].id == states[j].id) {
           states[j].value = additionalStates[k].value;
           found = true;
@@ -253,90 +287,98 @@ pn.ui.filter.GenericListFilter.prototype.loadFiltersFromCookie = function() {
       }
     }
   }
-  this.applyFilterStates(states, true);
+  this.applyFilterStates_(states, true);
 };
 
-/**	 
- * @private
- * @param {!Event} e
- */
-pn.ui.filter.GenericListFilter.prototype.onFilterChanged = function (e) {    
-    this.lastkeytime = new Date().getTime();
-    this.quickFindTimer();
+
+/** @private */
+pn.ui.filter.GenericListFilter.prototype.onFilterChanged_ = function() {
+  this.lastkeytime_ = new Date().getTime();
+  this.quickFindTimer_();
 };
 
-/**	 
- * @private	 
- */	
-pn.ui.filter.GenericListFilter.prototype.quickFindTimer = function() {
-    if (this.lastTimerID) { clearTimeout(this.lastTimerID); this.lastTimerID = 0; }
-    this.cancelQuickFind = true;
 
-    var curtime = new Date().getTime();  
-    var delay = this.options['filterDelay'];        
-    if (curtime - this.lastkeytime >= delay) {
-        this.refresh();
-    } else {        
-        this.lastTimerID = goog.Timer.callOnce(function() { this.quickFindTimer.call(this); }, delay / 3, this);
-    }
+/** @private */
+pn.ui.filter.GenericListFilter.prototype.quickFindTimer_ = function() {
+  if (this.lastTimerID_) {
+    clearTimeout(this.lastTimerID_);
+    this.lastTimerID_ = 0;
+  }
+  this.cancelQuickFind_ = true;
+
+  var curtime = new Date().getTime();
+  var delay = this.options['filterDelay'];
+  if (curtime - this.lastkeytime_ >= delay) {
+    this.refresh();
+  } else {
+    this.lastTimerID_ = goog.Timer.callOnce(function() {
+      this.quickFindTimer_.call(this);
+    }, delay / 3, this);
+  }
 };
 
-/**	 
- */	
+
+/** Refreshes the filtering states, usefull in ajax contexts */
 pn.ui.filter.GenericListFilter.prototype.refresh = function() {
-    this.cancelQuickFind = false;
-    clearTimeout(this.lastTimerID);
-    var filterStates = this.getFilterStates();			
-    this.applyFilterStates(filterStates, false);			
-    this.saveFiltersToCookie(filterStates);				
+  this.cancelQuickFind_ = false;
+  clearTimeout(this.lastTimerID_);
+  var filterStates = this.getFilterStates();
+  this.applyFilterStates_(filterStates, false);
+  this.saveFiltersToCookie_(filterStates);
 };
 
-/**	 
- * @protected
- * @return {!Array.<pn.ui.filter.FilterState>}
- */	
-pn.ui.filter.GenericListFilter.prototype.getFilterStates = function() {
-    var state = this.getFilterStateForFilter(this.filterInput);
-    return state ? [state] : [];
-};
 
 /**
  * @protected
- * @param {Element} filter
- * @return {pn.ui.filter.FilterState}
+ * @return {!Array.<pn.ui.filter.FilterState>} The current filter states.
  */
-pn.ui.filter.GenericListFilter.prototype.getFilterStateForFilter = function(filter) {			
-    var type = filter.options ? 'select-one' : filter.getAttribute('type');		
-    var value;		
-    switch (type) {
-        case 'text':
-            value = filter.value === null ? null : filter.value.toLowerCase();
-            break;
-        case 'select-one':
-            value = filter.selectedIndex === 0 ? null : filter.options[filter.selectedIndex].value;
-            break;
-        case 'checkbox':
-			      value = filter.checked;
-            break;
-        default:
-            throw 'Filter type ' + type + ' is not supported';
-    }
-    if (value === null || value.length <= 0) { return null; }    		
-	return new pn.ui.filter.FilterState(filter.getAttribute('id'), value, 0, type);
+pn.ui.filter.GenericListFilter.prototype.getFilterStates = function() {
+  var state = this.getFilterStateForFilter(this.input_);
+  return state ? [state] : [];
 };
+
+
+/**
+ * @protected
+ * @param {Element} filter The filter whose state we require.
+ * @return {pn.ui.filter.FilterState} The filter state for the specified filter.
+ */
+pn.ui.filter.GenericListFilter.prototype.getFilterStateForFilter =
+    function(filter) {
+  var type = filter.options ? 'select-one' : filter.getAttribute('type');
+  var value;
+  switch (type) {
+    case 'text':
+      value = filter.value === null ? null : filter.value.toLowerCase();
+      break;
+    case 'select-one':
+      value = filter.selectedIndex === 0 ?
+          null : filter.options[filter.selectedIndex].value;
+      break;
+    case 'checkbox':
+      value = filter.checked;
+      break;
+    default:
+      throw 'Filter type ' + type + ' is not supported';
+  }
+  if (value === null || value.length <= 0) { return null; }
+  var id = filter.getAttribute('id');
+  return new pn.ui.filter.FilterState(id, value, 0, type);
+};
+
 
 /**
  * @private
- * @param {!Array.<pn.ui.filter.FilterState>} filterStates
+ * @param {!Array.<pn.ui.filter.FilterState>} sts The states to save.
  */
-pn.ui.filter.GenericListFilter.prototype.saveFiltersToCookie = function(filterStates) {			
+pn.ui.filter.GenericListFilter.prototype.saveFiltersToCookie_ = function(sts) {
   if (!this.options['enableCookies']) { return; }
   var filterStatesById = [];
   var filterStatesByHeaderText = [];
   var sharedCookieId = null;
-  for (var i = 0; i < filterStates.length; i++) {
-    var state = filterStates[i];
-    filterStatesById = this.addFilterStateToStringArray(filterStatesById, state);
+  for (var i = 0; i < sts.length; i++) {
+    var state = sts[i];
+    this.addFilterStateToStringArray_(filterStatesById, state);
 
     sharedCookieId = this.options['sharedCookieId'];
     if (sharedCookieId) {
@@ -344,72 +386,93 @@ pn.ui.filter.GenericListFilter.prototype.saveFiltersToCookie = function(filterSt
       if (state.idx >= 0) {
         var header = this.headers[state.idx];
         var visible = goog.style.isElementShown(header);
-        headerText = header.getAttribute('filter') === 'false' || !visible ? null : goog.dom.getTextContent(header);
+        headerText = header.getAttribute('filter') === 'false' || !visible ?
+            null : goog.dom.getTextContent(header);
       } else {
         headerText = '#' + state.id;
       }
       if (headerText) {
-        var stateByHeaderText = new pn.ui.filter.FilterState(headerText, state.value, state.idx, state.type);
-        filterStatesByHeaderText = this.addFilterStateToStringArray(filterStatesByHeaderText, stateByHeaderText);
+        var fs = new pn.ui.filter.FilterState(
+            headerText, state.value, state.idx, state.type);
+        filterStatesByHeaderText = this.addFilterStateToStringArray_(
+            filterStatesByHeaderText, fs);
       }
-    } 
-  }        
-  goog.net.cookies.set(this.filterKey, filterStatesById.join(''), 999999);
+    }
+  }
+  goog.net.cookies.set(this.filterKey_, filterStatesById.join(''), 999999);
   if (sharedCookieId) {
-    goog.net.cookies.set(sharedCookieId, filterStatesByHeaderText.join(''), 999999);
+    goog.net.cookies.set(sharedCookieId,
+        filterStatesByHeaderText.join(''), 999999);
   }
 };
 
-/**
- * @private
- * @param {!Array.<string>} cookieStringArray
- * @param {pn.ui.filter.FilterState} filterState
- * @return {!Array.<string>}
- */
-pn.ui.filter.GenericListFilter.prototype.addFilterStateToStringArray = function(cookieStringArray, filterState) {					
-  if (cookieStringArray.length > 0) cookieStringArray.push('|');
-  cookieStringArray.push(filterState.id);
-  cookieStringArray.push(',');
-  cookieStringArray.push(filterState.idx);
-  cookieStringArray.push(',');
-  cookieStringArray.push(filterState.type);
-  cookieStringArray.push(',');
-  cookieStringArray.push(filterState.value);
-  return cookieStringArray;
-};
 
 /**
  * @private
- * @param {!Array.<pn.ui.filter.FilterState>} filterStates
- * @param {boolean} setValueOnFilter
+ * @param {!Array.<string>} arr The array to add the filter state
+ *    to (as a string).
+ * @param {pn.ui.filter.FilterState} state The filter state to convert to a
+ *    string and add to the array.
  */
-pn.ui.filter.GenericListFilter.prototype.applyFilterStates = function(filterStates, setValueOnFilter) {					
-	if (this.options['filteringElements']) this.options['filteringElements'](filterStates);
-	this.applyFilterStatesImpl(filterStates, setValueOnFilter);
-	if (this.options['filteredElements']) this.options['filteredElements'](filterStates);
+pn.ui.filter.GenericListFilter.prototype.addFilterStateToStringArray_ =
+    function(arr, state) {
+  if (arr.length > 0) arr.push('|');
+  arr.push(state.id);
+  arr.push(',');
+  arr.push(state.idx);
+  arr.push(',');
+  arr.push(state.type);
+  arr.push(',');
+  arr.push(state.value);
 };
+
+
 /**
  * @private
- * @param {!Array.<pn.ui.filter.FilterState>} filterStates
- * @param {boolean} setValueOnFilter
- */	
-pn.ui.filter.GenericListFilter.prototype.applyFilterStatesImpl = function(filterStates, setValueOnFilter) {							
-    this.clearElementFilteredStates();
-    if ((!filterStates || filterStates.length) === 0 && this.options['matchingElement']) {
-        this.hideElementsThatDoNotMatchAnyFiltres();
-        return;
-    }								
-    if (filterStates === null || filterStates.length === 0) { this.applyStateToElements(null); }
-    else {
-      for (var i = 0; i < filterStates.length; i++) {
-        var state = filterStates[i];
-        if (setValueOnFilter && state.type && state.id) {
-          var filter = goog.dom.getElement(state.id);
-          if (!filter || filter.length === 0) {
-            continue;
-          }
+ * @param {!Array.<pn.ui.filter.FilterState>} filterStates The filterStates
+ *    to apply.
+ * @param {boolean} setValueOnFilter Wether we need to set the filter value
+ *    on the DOM control.  This is usefull when loading from cookies.
+ */
+pn.ui.filter.GenericListFilter.prototype.applyFilterStates_ =
+    function(filterStates, setValueOnFilter) {
+  if (this.options['filteringElements'])
+    this.options['filteringElements'](filterStates);
 
-          switch (state.type) {
+  this.applyFilterStatesImpl_(filterStates, setValueOnFilter);
+
+  if (this.options['filteredElements'])
+    this.options['filteredElements'](filterStates);
+};
+
+
+/**
+ * @private
+ * @param {!Array.<pn.ui.filter.FilterState>} filterStates The filterStates
+ *    to apply.
+ * @param {boolean} setValueOnFilter Wether we need to set the filter value
+ *    on the DOM control.  This is usefull when loading from cookies.
+ */
+pn.ui.filter.GenericListFilter.prototype.applyFilterStatesImpl_ =
+    function(filterStates, setValueOnFilter) {
+  this.clearElementFilteredStates_();
+  if ((!filterStates || filterStates.length) === 0 &&
+      this.options['matchingElement']) {
+    this.hideElementsThatDoNotMatchAnyFiltres_();
+    return;
+  }
+  if (filterStates === null || filterStates.length === 0) {
+    this.applyStateToElements_(null);
+  } else {
+    for (var i = 0; i < filterStates.length; i++) {
+      var state = filterStates[i];
+      if (setValueOnFilter && state.type && state.id) {
+        var filter = goog.dom.getElement(state.id);
+        if (!filter || filter.length === 0) {
+          continue;
+        }
+
+        switch (state.type) {
           case 'select-one':
             goog.array.forEach(filter.options, function(o, idx) {
               if (o.value === state.value) {
@@ -426,132 +489,157 @@ pn.ui.filter.GenericListFilter.prototype.applyFilterStatesImpl = function(filter
             break;
           default:
             throw 'Filter type ' + state.type + ' is not supported';
-          }
         }
-        this.applyStateToElements(state);
       }
+      this.applyStateToElements_(state);
     }
+  }
 
-  this.hideElementsThatDoNotMatchAnyFiltres();			
+  this.hideElementsThatDoNotMatchAnyFiltres_();
 };
 
-/**
- * @private	 
- */
-pn.ui.filter.GenericListFilter.prototype.clearElementFilteredStates = function() {
-    goog.array.forEach(this.listItems, function(r) { r.removeAttribute('filtermatch'); } );
+
+/** @private */
+pn.ui.filter.GenericListFilter.prototype.clearElementFilteredStates_ =
+    function() {
+  goog.array.forEach(this.listItems, function(r) {
+    r.removeAttribute('filtermatch');
+  });
 };
+
 
 /**
  * @private
- * @param {pn.ui.filter.FilterState} filterState	 
+ * @param {pn.ui.filter.FilterState} filterState The filter state to apply.
  */
-pn.ui.filter.GenericListFilter.prototype.applyStateToElements = function (filterState) {  
-  var normalisedTokens = this.getNormalisedSearchTokensForState(filterState);
-  // if (!normalisedTokens) { return; } // TODO: Validate this
-  
+pn.ui.filter.GenericListFilter.prototype.applyStateToElements_ =
+    function(filterState) {
+  var normalisedTokens = this.getNormalisedSearchTokensForState_(filterState);
+
   for (var i = 0; i < this.listItems.length; i++) {
-    if (this.cancelQuickFind) return;
+    if (this.cancelQuickFind_) return;
     var item = this.listItems[i];
     if (item.getAttribute('filtermatch')) { continue; }
-    if (!this.doesElementContainText(filterState, item, normalisedTokens)) { item.setAttribute('filtermatch', 'false'); }
+    if (!this.doesElementContainText(filterState, item, normalisedTokens)) {
+      item.setAttribute('filtermatch', 'false');
+    }
   }
 };
 
-/**
- * @private
- * @param {pn.ui.filter.FilterState} state
- * @return {Array.<string>}
- */
-pn.ui.filter.GenericListFilter.prototype.getNormalisedSearchTokensForState = function(state) {
-    if (state === null) { return null; }
-    switch (state.type) {
-        case 'select-one':
-            return [state.value];
-        case 'text':
-            return this.search.parseSearchTokens(state.value);
-        case 'checkbox':
-          return null;
-        default:
-            throw 'State type ' + state.type + ' is not supported';
-    }
-};
 
 /**
- * @private	 
+ * @private
+ * @param {pn.ui.filter.FilterState} state The filter to normalise.
+ * @return {Array.<string>} The normalised tokens for the filter state.
  */
-pn.ui.filter.GenericListFilter.prototype.hideElementsThatDoNotMatchAnyFiltres =function() {
-    for (var i = 0; i < this.listItems.length; i++) {
-        if (this.cancelQuickFind) return;
-        var item = this.listItems[i];
-		var show = item.getAttribute('filtermatch') !== 'false';			
-		goog.style.showElement(item, show);            
-    }
+pn.ui.filter.GenericListFilter.prototype.getNormalisedSearchTokensForState_ =
+    function(state) {
+  if (state === null) { return null; }
+  switch (state.type) {
+    case 'select-one':
+      return [state.value];
+    case 'text':
+      return this.search_.parseSearchTokens(state.value);
+    case 'checkbox':
+      return null;
+    default:
+      throw 'State type ' + state.type + ' is not supported';
+  }
 };
+
+
+/** @private */
+pn.ui.filter.GenericListFilter.prototype.hideElementsThatDoNotMatchAnyFiltres_ =
+    function() {
+  for (var i = 0; i < this.listItems.length; i++) {
+    if (this.cancelQuickFind_) return;
+    var item = this.listItems[i];
+    var show = item.getAttribute('filtermatch') !== 'false';
+    goog.style.showElement(item, show);
+  }
+};
+
 
 /**
  * @protected
- * @param {pn.ui.filter.FilterState} state
- * @param {!Element} item
- * @param {Array.<string>} textTokens
- * @param {string=} optText
- * @return {boolean}
+ * @param {pn.ui.filter.FilterState} state The filter state to check for
+ *    a match.
+ * @param {!Element} item The DOM element for the filter.
+ * @param {Array.<string>} textTokens The filter text tokens.
+ * @param {string=} opt_txt The text to match against.
+ * @return {boolean} Wether the filter matches the specified text.
  */
-pn.ui.filter.GenericListFilter.prototype.doesElementContainText = function (state, item, textTokens, optText) {  
+pn.ui.filter.GenericListFilter.prototype.doesElementContainText =
+    function(state, item, textTokens, opt_txt) {
   var exact = goog.isDefAndNotNull(state) && state.type === 'select-one';
-  var matches = optText ?
-    this.doesTextContainTextImpl(optText, textTokens, exact) :
-    this.doesTextContainText(item, textTokens, exact);  
-  return matches && this.checkMatchingElementCallback(state, item, textTokens);
-};
-				
-	
-/**
- * @private	 
- * @param {pn.ui.filter.FilterState} state
- * @param {!Element} item
- * @param {Array.<string>} textTokens	 
- * @return {boolean}
- */
-pn.ui.filter.GenericListFilter.prototype.checkMatchingElementCallback = function(state, item, textTokens) {
-    if (!this.options['matchingElement']) return true;				
-	var object = item;
-	if (window['jQuery']) object = window['jQuery'](item);
-    return this.options['matchingElement'](state, object, textTokens);
+  var matches = opt_txt ?
+      this.doesTextContainTextImpl(opt_txt, textTokens, exact) :
+      this.doesTextContainText(item, textTokens, exact);
+  return matches && this.checkMatchingElementCallback_(state, item, textTokens);
 };
 
-/**
- * @protected	  
- * @param {!Element} item
- * @param {Array.<string>} textTokens	 
- * @param {boolean} exact
- * @return {boolean}
- */
-pn.ui.filter.GenericListFilter.prototype.doesTextContainText = function(item, textTokens, exact) {
-  return this.doesTextContainTextImpl(goog.string.trim(goog.dom.getTextContent(item)), textTokens, exact); 
-};
 
 /**
- * @protected	 
- * @param {string} text
- * @param {Array.<string>} textTokens	 
- * @param {boolean} exact
- * @return {boolean}
+ * @private
+ * @param {pn.ui.filter.FilterState} state The filter state to check for
+ *    a match.
+ * @param {!Element} item The DOM element for the filter.
+ * @param {Array.<string>} textTokens The filter text tokens.
+ * @return {boolean} Wether the filter matches the specified text.
  */
-pn.ui.filter.GenericListFilter.prototype.doesTextContainTextImpl = function (text, textTokens, exact) {
-  return this.search.doesTextMatchTokens(text, textTokens, exact); 
+pn.ui.filter.GenericListFilter.prototype.checkMatchingElementCallback_ =
+    function(state, item, textTokens) {
+  if (!this.options['matchingElement']) return true;
+  var object = item;
+  if (window['jQuery']) object = window['jQuery'](item);
+  return this.options['matchingElement'](state, object, textTokens);
 };
+
+
+/**
+ * @protected
+ * @param {!Element} item The DOM element for the filter.
+ * @param {Array.<string>} textTokens The filter text tokens.
+ * @param {boolean} exact Wether an exact match is required.
+ * @return {boolean} Wether the filter matches the specified text.
+ */
+pn.ui.filter.GenericListFilter.prototype.doesTextContainText =
+    function(item, textTokens, exact) {
+  var trimmed = goog.string.trim(goog.dom.getTextContent(item));
+  return this.doesTextContainTextImpl(trimmed, textTokens, exact);
+};
+
+
+/**
+ * @protected
+ * @param {string} text The filter expression text.
+ * @param {Array.<string>} textTokens The filter text tokens.
+ * @param {boolean} exact Wether an exact match is required.
+ * @return {boolean} Wether the filter matches the specified text.
+ */
+pn.ui.filter.GenericListFilter.prototype.doesTextContainTextImpl =
+    function(text, textTokens, exact) {
+  return this.search_.doesTextMatchTokens(text, textTokens, exact);
+};
+
 
 /** @inheritDoc */
 pn.ui.filter.GenericListFilter.prototype.disposeInternal = function() {
-    pn.ui.filter.GenericListFilter.superClass_.disposeInternal.call(this);
+  pn.ui.filter.GenericListFilter.superClass_.disposeInternal.call(this);
 
-	goog.dispose(this.options);
-	goog.dispose(this.eventHandler);
-	goog.dispose(this.search);
+  goog.dispose(this.list);
+  goog.dispose(this.options);
+  goog.dispose(this.input_);
+  goog.array.forEach(this.listItems, goog.dispose);
+  goog.array.forEach(this.filters, goog.dispose);
+  goog.dispose(this.eh_);
+  goog.dispose(this.search_);
 
-	delete this.list;	
-	delete this.filterInput;
-	delete this.listItems;
-	delete this.filters;	
+  delete this.list;
+  delete this.options;
+  delete this.input_;
+  delete this.listItems;
+  delete this.filters;
+  delete this.eh_;
+  delete this.search_;
 };
