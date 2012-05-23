@@ -340,7 +340,7 @@ pn.ui.filter.GenericListFilter.prototype.getFilterStates = function() {
 
 /**
  * @protected
- * @param {!Element} filter The filter whose state we require.
+ * @param {Element} filter The filter whose state we require.
  * @return {pn.ui.filter.FilterState} The filter state for the specified filter.
  */
 pn.ui.filter.GenericListFilter.prototype.getFilterStateForFilter =

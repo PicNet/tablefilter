@@ -15737,7 +15737,7 @@ pn.ui.filter.GenericListFilter.prototype.getFilterStates = function() {
 
 /**
  * @protected
- * @param {!Element} filter The filter whose state we require.
+ * @param {Element} filter The filter whose state we require.
  * @return {pn.ui.filter.FilterState} The filter state for the specified filter.
  */
 pn.ui.filter.GenericListFilter.prototype.getFilterStateForFilter =
@@ -16290,7 +16290,11 @@ pn.ui.filter.TableFilter.prototype.getFilterStates = function() {
 };
 
 
-/** @inheritDoc */
+/**
+ * @protected
+ * @param {!Element} filter The filter whose state we require.
+ * @return {pn.ui.filter.FilterState} The filter state for the specified filter.
+ */
 pn.ui.filter.TableFilter.prototype.getFilterStateForFilter = function(filter) {
   var state = pn.ui.filter.TableFilter.superClass_.
       getFilterStateForFilter.call(this, filter);
