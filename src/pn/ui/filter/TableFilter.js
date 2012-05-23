@@ -16,7 +16,7 @@ goog.provide('pn.ui.filter.TableFilter');
  * @extends {pn.ui.filter.GenericListFilter}
  * @export
  *
- * @param {!HtmlTableElement} grid The HtmlTable element to add the PicNet
+ * @param {!HTMLTableElement} grid The HtmlTable element to add the PicNet
  *    table filter to.
  * @param {!pn.ui.filter.TableFilterOptions} opts The options for filtering.
  *    Since this options has to work outside of the closure environment all
@@ -32,27 +32,27 @@ pn.ui.filter.TableFilter = function(grid, opts) {
 
   /**
    * @private
-   * @type {!Array.<number>}
+   * @type {Array.<number>}
    */
-  this.filterColumnIndexes_ = [];
+  this.filterColumnIndexes_;
 
   /**
    * @private
-   * @type {!Array.<!Element>}
+   * @type {Array.<!Element>}
    */
-  this.headers_ = [];
-
-  /**
-   * @private
-   * @type {Element}
-   */
-  this.thead_ = null;
+  this.headers_;
 
   /**
    * @private
    * @type {Element}
    */
-  this.tbody_ = null;
+  this.thead_;
+
+  /**
+   * @private
+   * @type {Element}
+   */
+  this.tbody_;
 };
 goog.inherits(pn.ui.filter.TableFilter, pn.ui.filter.GenericListFilter);
 
@@ -132,8 +132,9 @@ pn.ui.filter.TableFilter.prototype.initialiseControlCaches = function() {
  */
 pn.ui.filter.TableFilter.prototype.getColumnIndexOfFilter_ = function(f) {
   var td = goog.dom.getAncestorByTagNameAndClass(f, goog.dom.TagName.TD);
+   if (!td || td.length <= 0) { return -1; } 
   var tr = goog.dom.getAncestorByTagNameAndClass(td, goog.dom.TagName.TR);
-  var cells = /** @type {!Array.<!Element>} */ (tr.getElementsByTagName('td'));
+  var cells = (tr.getElementsByTagName('td'));
   return goog.array.indexOf(cells, td);
 };
 

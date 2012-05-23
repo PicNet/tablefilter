@@ -1496,8 +1496,10 @@ goog.scope = function(fn) {
 };
 
 
-
+;
 goog.provide('pn.ui.filter.FilterState');
+
+
 
 /**
  * @constructor
@@ -1526,7 +1528,7 @@ pn.ui.filter.FilterState.prototype.toString = function() {
   return 'id[' + this.id + '] value[' + this.value +
       '] idx[' + this.idx + '] type[' + this.type + ']';
 };
-
+;
 goog.require('pn.ui.filter.FilterState');
 
 goog.provide('pn.ui.filter.GenericListFilterOptions');
@@ -1590,7 +1592,7 @@ pn.ui.filter.GenericListFilterOptions.prototype.disposeInternal = function() {
 
   for (var i in this) { delete this[i]; }
 };
-
+;
 goog.require('pn.ui.filter.FilterState');
 goog.require('pn.ui.filter.GenericListFilterOptions');
 
@@ -15393,7 +15395,7 @@ pn.ui.filter.SearchEngine.prototype.convertExpressionToPostFix_ =
   while (stackOps.length > 0) { postFix = postFix + '|' + stackOps.pop(); }
   return postFix.substring(1);
 };
-
+;
 goog.require('goog.Disposable');
 goog.require('goog.Timer');
 goog.require('goog.array');
@@ -15652,14 +15654,14 @@ pn.ui.filter.GenericListFilter.prototype.loadFiltersFromCookie_ = function() {
         continue;
       }
 
-      for (var hidx = 0; hidx < this.headers.length; hidx++) {
-        var header = this.headers[hidx];
+      for (var hidx = 0; hidx < this.headers_.length; hidx++) {
+        var header = this.headers_[hidx];
         var visible = goog.style.isElementShown(header);
         var headerText = header.getAttribute('filter') === 'false' || !visible ?
             null : goog.dom.getTextContent(header);
 
         if (headerText && headerText == stateHeaderTextOrAdditionalFilterId) {
-          var filter = this.filters[this.filterColumnIndexes.indexOf(hidx)];
+          var filter = this.filters[this.filterColumnIndexes_.indexOf(hidx)];
           var fid = filter.getAttribute('id');
           var fs = new pn.ui.filter.FilterState(fid, state[3], hidx, state[2]);
           additionalStates.push(fs);
@@ -15735,7 +15737,7 @@ pn.ui.filter.GenericListFilter.prototype.getFilterStates = function() {
 
 /**
  * @protected
- * @param {Element} filter The filter whose state we require.
+ * @param {!Element} filter The filter whose state we require.
  * @return {pn.ui.filter.FilterState} The filter state for the specified filter.
  */
 pn.ui.filter.GenericListFilter.prototype.getFilterStateForFilter =
@@ -15768,8 +15770,8 @@ pn.ui.filter.GenericListFilter.prototype.getFilterStateForFilter =
  */
 pn.ui.filter.GenericListFilter.prototype.saveFiltersToCookie_ = function(sts) {
   if (!this.options['enableCookies']) { return; }
-  var filterStatesById = [];
-  var filterStatesByHeaderText = [];
+  var filterStatesById = /** @type  !Array.<!string> */ []; 
+  var filterStatesByHeaderText = /** @type  !Array.<!string> */ [];
   var sharedCookieId = null;
   for (var i = 0; i < sts.length; i++) {
     var state = sts[i];
@@ -15779,7 +15781,7 @@ pn.ui.filter.GenericListFilter.prototype.saveFiltersToCookie_ = function(sts) {
     if (sharedCookieId) {
       var headerText;
       if (state.idx >= 0) {
-        var header = this.headers[state.idx];
+        var header = this.headers_[state.idx];
         var visible = goog.style.isElementShown(header);
         headerText = header.getAttribute('filter') === 'false' || !visible ?
             null : goog.dom.getTextContent(header);
@@ -15789,7 +15791,7 @@ pn.ui.filter.GenericListFilter.prototype.saveFiltersToCookie_ = function(sts) {
       if (headerText) {
         var fs = new pn.ui.filter.FilterState(
             headerText, state.value, state.idx, state.type);
-        filterStatesByHeaderText = this.addFilterStateToStringArray_(
+        filterStatesByHeaderText = /** @type  !Array.<!string> */ this.addFilterStateToStringArray_(
             filterStatesByHeaderText, fs);
       }
     }
@@ -16038,7 +16040,7 @@ pn.ui.filter.GenericListFilter.prototype.disposeInternal = function() {
   delete this.eh_;
   delete this.search_;
 };
-
+;
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.dom.classes');
@@ -16056,7 +16058,7 @@ goog.provide('pn.ui.filter.TableFilter');
  * @extends {pn.ui.filter.GenericListFilter}
  * @export
  *
- * @param {!HtmlTableElement} grid The HtmlTable element to add the PicNet
+ * @param {!HTMLTableElement} grid The HtmlTable element to add the PicNet
  *    table filter to.
  * @param {!pn.ui.filter.TableFilterOptions} opts The options for filtering.
  *    Since this options has to work outside of the closure environment all
@@ -16072,27 +16074,27 @@ pn.ui.filter.TableFilter = function(grid, opts) {
 
   /**
    * @private
-   * @type {!Array.<number>}
+   * @type {Array.<number>}
    */
-  this.filterColumnIndexes_ = [];
+  this.filterColumnIndexes_;
 
   /**
    * @private
-   * @type {!Array.<!Element>}
+   * @type {Array.<!Element>}
    */
-  this.headers_ = [];
-
-  /**
-   * @private
-   * @type {Element}
-   */
-  this.thead_ = null;
+  this.headers_;
 
   /**
    * @private
    * @type {Element}
    */
-  this.tbody_ = null;
+  this.thead_;
+
+  /**
+   * @private
+   * @type {Element}
+   */
+  this.tbody_;
 };
 goog.inherits(pn.ui.filter.TableFilter, pn.ui.filter.GenericListFilter);
 
@@ -16172,9 +16174,9 @@ pn.ui.filter.TableFilter.prototype.initialiseControlCaches = function() {
  */
 pn.ui.filter.TableFilter.prototype.getColumnIndexOfFilter_ = function(f) {
   var td = goog.dom.getAncestorByTagNameAndClass(f, goog.dom.TagName.TD);
-  if (!td || td.length <= 0) { return -1; }  
+   if (!td || td.length <= 0) { return -1; } 
   var tr = goog.dom.getAncestorByTagNameAndClass(td, goog.dom.TagName.TR);
-  var cells = /** @type {!Array.<!Element>} */ (tr.getElementsByTagName('td'));
+  var cells = (tr.getElementsByTagName('td'));
   return goog.array.indexOf(cells, td);
 };
 
@@ -16334,7 +16336,7 @@ pn.ui.filter.TableFilter.prototype.disposeInternal = function() {
   delete this.thead_;
   delete this.tbody_;
 };
-
+;
 goog.require('goog.array');
 goog.require('pn.ui.filter.TableFilter');
 goog.require('pn.ui.filter.TableFilterOptions');

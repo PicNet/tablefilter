@@ -257,14 +257,14 @@ pn.ui.filter.GenericListFilter.prototype.loadFiltersFromCookie_ = function() {
         continue;
       }
 
-      for (var hidx = 0; hidx < this.headers.length; hidx++) {
-        var header = this.headers[hidx];
+      for (var hidx = 0; hidx < this.headers_.length; hidx++) {
+        var header = this.headers_[hidx];
         var visible = goog.style.isElementShown(header);
         var headerText = header.getAttribute('filter') === 'false' || !visible ?
             null : goog.dom.getTextContent(header);
 
         if (headerText && headerText == stateHeaderTextOrAdditionalFilterId) {
-          var filter = this.filters[this.filterColumnIndexes.indexOf(hidx)];
+          var filter = this.filters[this.filterColumnIndexes_.indexOf(hidx)];
           var fid = filter.getAttribute('id');
           var fs = new pn.ui.filter.FilterState(fid, state[3], hidx, state[2]);
           additionalStates.push(fs);
@@ -340,7 +340,7 @@ pn.ui.filter.GenericListFilter.prototype.getFilterStates = function() {
 
 /**
  * @protected
- * @param {Element} filter The filter whose state we require.
+ * @param {!Element} filter The filter whose state we require.
  * @return {pn.ui.filter.FilterState} The filter state for the specified filter.
  */
 pn.ui.filter.GenericListFilter.prototype.getFilterStateForFilter =
@@ -373,8 +373,8 @@ pn.ui.filter.GenericListFilter.prototype.getFilterStateForFilter =
  */
 pn.ui.filter.GenericListFilter.prototype.saveFiltersToCookie_ = function(sts) {
   if (!this.options['enableCookies']) { return; }
-  var filterStatesById = [];
-  var filterStatesByHeaderText = [];
+  var filterStatesById = /** @type  !Array.<!string> */ []; 
+  var filterStatesByHeaderText = /** @type  !Array.<!string> */ [];
   var sharedCookieId = null;
   for (var i = 0; i < sts.length; i++) {
     var state = sts[i];
@@ -384,7 +384,7 @@ pn.ui.filter.GenericListFilter.prototype.saveFiltersToCookie_ = function(sts) {
     if (sharedCookieId) {
       var headerText;
       if (state.idx >= 0) {
-        var header = this.headers[state.idx];
+        var header = this.headers_[state.idx];
         var visible = goog.style.isElementShown(header);
         headerText = header.getAttribute('filter') === 'false' || !visible ?
             null : goog.dom.getTextContent(header);
@@ -394,7 +394,7 @@ pn.ui.filter.GenericListFilter.prototype.saveFiltersToCookie_ = function(sts) {
       if (headerText) {
         var fs = new pn.ui.filter.FilterState(
             headerText, state.value, state.idx, state.type);
-        filterStatesByHeaderText = this.addFilterStateToStringArray_(
+        filterStatesByHeaderText = /** @type  !Array.<!string> */ this.addFilterStateToStringArray_(
             filterStatesByHeaderText, fs);
       }
     }
