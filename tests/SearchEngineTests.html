@@ -9,10 +9,10 @@
 
 				<script>
 
-goog.require('picnet.ui.filter.SearchEngine');
+goog.require('pn.ui.filter.SearchEngine');
 
 var se;		
-var setUp = function () { se = new picnet.ui.filter.SearchEngine(); }
+var setUp = function () { se = new pn.ui.filter.SearchEngine(); }
 	
 testArgumentParsing = function() { 				
 	var tokens1 = se.parseSearchTokens('text1 and text2');
@@ -25,11 +25,11 @@ testArgumentParsing = function() {
 };	
 
 testGetTokensFromExpression = function() {		
-	assertArrayEquals(['text1', 'and', 'text2'], se.getTokensFromExpression('text1 and text2'));		
-	assertArrayEquals(['text1', 'and', '(text2', 'or', 'text3)'], se.getTokensFromExpression('text1 and (text2 or text3)'));				
-	assertArrayEquals(['phrase 1'], se.getTokensFromExpression('"phrase 1"'));		
-	assertArrayEquals(['text1', 'and', 'phrase 2'], se.getTokensFromExpression('text1 and "phrase 2"'));		
-	assertArrayEquals(['t1', 'and', 't2' , 'and', 'p 1', 'and', 'p 2', 'or' , '(t3', 'and', 't4', 'and' , 'p 3', 'and', 'p 4', ')'], se.getTokensFromExpression('t1 and t2 and "p 1" and "p 2" or (t3 and t4 and "p 3" and "p 4")'));		
+	assertArrayEquals(['text1', 'and', 'text2'], se.getTokensFromExpression_('text1 and text2'));		
+	assertArrayEquals(['text1', 'and', '(text2', 'or', 'text3)'], se.getTokensFromExpression_('text1 and (text2 or text3)'));				
+	assertArrayEquals(['phrase 1'], se.getTokensFromExpression_('"phrase 1"'));		
+	assertArrayEquals(['text1', 'and', 'phrase 2'], se.getTokensFromExpression_('text1 and "phrase 2"'));		
+	assertArrayEquals(['t1', 'and', 't2' , 'and', 'p 1', 'and', 'p 2', 'or' , '(t3', 'and', 't4', 'and' , 'p 3', 'and', 'p 4', ')'], se.getTokensFromExpression_('t1 and t2 and "p 1" and "p 2" or (t3 and t4 and "p 3" and "p 4")'));		
 };	
 
 testParseSearchTokensFromNumericExpression = function() {		

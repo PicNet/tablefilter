@@ -18,6 +18,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{04519C84-4BF
 		src\deps.js = src\deps.js
 		src\jquery-1.3.2.externs.js = src\jquery-1.3.2.externs.js
 		src\requirements.js = src\requirements.js
+		tests\SearchEngineTests.html = tests\SearchEngineTests.html
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{491C0DD4-7B2E-4770-842A-D401F94CB3EE}"
@@ -25,19 +26,20 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{491C0DD4
 		tests\SearchEngineTests.html = tests\SearchEngineTests.html
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "picnet", "picnet", "{8515BBBA-3595-47C8-9B19-B6BC3EE6B8F4}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pn", "pn", "{8515BBBA-3595-47C8-9B19-B6BC3EE6B8F4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ui", "ui", "{1B65FA36-68A9-4249-9DED-88F8002F526E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "filter", "filter", "{A4172A98-161A-4B22-BB5B-62C0DD1CE9D2}"
 	ProjectSection(SolutionItems) = preProject
-		src\picnet\ui\filter\FilterState.js = src\picnet\ui\filter\FilterState.js
-		src\picnet\ui\filter\GenericListFilter.js = src\picnet\ui\filter\GenericListFilter.js
-		src\picnet\ui\filter\GenericListFilterOptions.js = src\picnet\ui\filter\GenericListFilterOptions.js
-		src\picnet\ui\filter\jQueryPlugin.js = src\picnet\ui\filter\jQueryPlugin.js
-		src\picnet\ui\filter\SearchEngine.js = src\picnet\ui\filter\SearchEngine.js
-		src\picnet\ui\filter\TableFilter.js = src\picnet\ui\filter\TableFilter.js
-		src\picnet\ui\filter\TableFilterOptions.js = src\picnet\ui\filter\TableFilterOptions.js
+		src\pn\ui\filter\ArrayExtension.js = src\pn\ui\filter\ArrayExtension.js
+		src\pn\ui\filter\FilterState.js = src\pn\ui\filter\FilterState.js
+		src\pn\ui\filter\GenericListFilter.js = src\pn\ui\filter\GenericListFilter.js
+		src\pn\ui\filter\GenericListFilterOptions.js = src\pn\ui\filter\GenericListFilterOptions.js
+		src\pn\ui\filter\jQueryPlugin.js = src\pn\ui\filter\jQueryPlugin.js
+		src\pn\ui\filter\SearchEngine.js = src\pn\ui\filter\SearchEngine.js
+		src\pn\ui\filter\TableFilter.js = src\pn\ui\filter\TableFilter.js
+		src\pn\ui\filter\TableFilterOptions.js = src\pn\ui\filter\TableFilterOptions.js
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lib", "lib", "{E675B01B-C5B9-43F7-8902-02044003CC68}"

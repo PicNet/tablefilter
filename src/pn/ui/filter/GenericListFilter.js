@@ -1,4 +1,4 @@
-﻿;
+;
 goog.require('goog.Disposable');
 goog.require('goog.Timer');
 goog.require('goog.array');

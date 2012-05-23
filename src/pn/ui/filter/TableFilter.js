@@ -1,4 +1,4 @@
-﻿;
+;
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.dom.classes');
@@ -69,7 +69,7 @@ pn.ui.filter.TableFilter.prototype.initialiseFilters = function() {
   this.tbody_ = goog.dom.getElementsByTagNameAndClass(
       'tbody', null, this.list)[0];
   this.thead_ = goog.dom.getElementsByTagNameAndClass(
-      'thead', null, this.opts['frozenHeaderTable'] || this.list)[0];
+      'thead', null, this.options['frozenHeaderTable'] || this.list)[0];
 
   if (!this.thead_) {
     var trTableRow = goog.dom.getElementsByTagNameAndClass(
@@ -186,7 +186,7 @@ pn.ui.filter.TableFilter.prototype.getFilterDom_ = function(colIdx, header) {
       'type': 'text',
       'id': this.getListId() + '_filter_' + colIdx,
       'class': 'filter',
-      'title': this.opts['filterToolTipMessage']
+      'title': this.options['filterToolTipMessage']
     });
     case 'ddl': return this.getSelectFilter_(colIdx);
     default: throw 'filter-type: ' + filterType + ' is not supported';
@@ -203,7 +203,7 @@ pn.ui.filter.TableFilter.prototype.getSelectFilter_ = function(colIdx) {
   var select = goog.dom.createDom('select', {
     'id': this.getListId() + '_filter_' + colIdx,
     'class': 'filter'
-  }, goog.dom.createDom('option', {}, this.opts['selectOptionLabel']));
+  }, goog.dom.createDom('option', {}, this.options['selectOptionLabel']));
   var cells = goog.array.map(this.listItems, function(r) {
     return r.cells[colIdx];
   });
@@ -236,11 +236,11 @@ pn.ui.filter.TableFilter.prototype.getFilterStates = function() {
     if (state) { filterStates.push(state); }
   }
 
-  if (!this.opts['additionalFilterTriggers']) return filterStates;
+  if (!this.options['additionalFilterTriggers']) return filterStates;
 
-  for (i = 0; i < this.opts['additionalFilterTriggers'].length; i++) {
+  for (i = 0; i < this.options['additionalFilterTriggers'].length; i++) {
     state = this.getFilterStateForFilter(
-        this.opts['additionalFilterTriggers'][i]);
+        this.options['additionalFilterTriggers'][i]);
     if (state) filterStates.push(state);
   }
   return filterStates;

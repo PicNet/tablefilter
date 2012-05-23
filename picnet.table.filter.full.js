@@ -384,12 +384,14 @@ goog.nullFunction = function() {};
 /**
  * The identity function. Returns its first argument.
  *
- * @param {...*} var_args The arguments of the function.
- * @return {*} The first argument.
+ * @param {*=} opt_returnValue The single value that will be returned.
+ * @param {...*} var_args Optional trailing arguments. These are ignored.
+ * @return {?} The first argument. We can't know the type -- just pass it along
+ *      without type.
  * @deprecated Use goog.functions.identity instead.
  */
-goog.identityFunction = function(var_args) {
-  return arguments[0];
+goog.identityFunction = function(opt_returnValue, var_args) {
+  return opt_returnValue;
 };
 
 
@@ -422,9 +424,26 @@ goog.abstractMethod = function() {
  */
 goog.addSingletonGetter = function(ctor) {
   ctor.getInstance = function() {
-    return ctor.instance_ || (ctor.instance_ = new ctor());
+    if (ctor.instance_) {
+      return ctor.instance_;
+    }
+    if (goog.DEBUG) {
+      // NOTE: JSCompiler can't optimize away Array#push.
+      goog.instantiatedSingletons_[goog.instantiatedSingletons_.length] = ctor;
+    }
+    return ctor.instance_ = new ctor;
   };
 };
+
+
+/**
+ * All singleton classes that have been instantiated, for testing. Don't read
+ * it directly, use the {@code goog.testing.singleton} module. The compiler
+ * removes this variable if unused.
+ * @type {!Array.<!Function>}
+ * @private
+ */
+goog.instantiatedSingletons_ = [];
 
 
 if (!COMPILED && goog.ENABLE_DEBUG_LOADER) {
@@ -1477,6 +1496,134 @@ goog.scope = function(fn) {
 };
 
 
+
+goog.provide('pn.ui.filter.FilterState');
+
+/**
+ * @constructor
+ * @param {string} id The id of this filter.
+ * @param {string} value The value of this filter.
+ * @param {number} idx The column index of this filter.
+ * @param {string} type The type of this filter.
+ */
+pn.ui.filter.FilterState = function(id, value, idx, type) {
+  /** @type {string} */
+  this.id = id;
+
+  /** @type {string} */
+  this.value = value;
+
+  /** @type {number} */
+  this.idx = idx;
+
+  /** @type {string} */
+  this.type = type;
+};
+
+
+/** @inheritDoc */
+pn.ui.filter.FilterState.prototype.toString = function() {
+  return 'id[' + this.id + '] value[' + this.value +
+      '] idx[' + this.idx + '] type[' + this.type + ']';
+};
+
+goog.require('pn.ui.filter.FilterState');
+
+goog.provide('pn.ui.filter.GenericListFilterOptions');
+
+
+
+/**
+ * @constructor
+ * @extends {goog.Disposable}
+ */
+pn.ui.filter.GenericListFilterOptions = function() {};
+
+
+/** @type {string} The default tooltip for the filter controls */
+pn.ui.filter.GenericListFilterOptions.DEFAULT_TOOLTIP =
+    'Quotes (\") match phrases. (not) excludes a match from the results. (or)' +
+    ' can be used to do Or searches. I.e. [red or blue] will match either red' +
+    ' or blue. Numeric values support >=, >, <=, <, = and != operators.';
+
+
+/** @type {!Array.<!Element>} */
+pn.ui.filter.GenericListFilterOptions.prototype['additionalFilterTriggers'] =
+    [];
+
+
+/** @type {!Array.<!Element>} */
+pn.ui.filter.GenericListFilterOptions.prototype['clearFiltersControls'] = [];
+
+
+/** @type {number} */
+pn.ui.filter.GenericListFilterOptions.prototype['filterDelay'] = 250;
+
+
+/** @type {string} */
+pn.ui.filter.GenericListFilterOptions.prototype['filterToolTipMessage'] =
+    pn.ui.filter.GenericListFilterOptions.DEFAULT_TOOLTIP;
+
+
+/** @type {boolean} */
+pn.ui.filter.GenericListFilterOptions.prototype['enableCookies'] = true;
+
+
+/** @type {function(pn.ui.filter.FilterState, !Element, Array.<string>)?} */
+pn.ui.filter.GenericListFilterOptions.prototype['matchingElement'] = null;
+
+
+/** @type {function(!Array.<!pn.ui.filter.FilterState>)?} */
+pn.ui.filter.GenericListFilterOptions.prototype['filteringElements'] = null;
+
+
+/** @type {string} */
+pn.ui.filter.GenericListFilterOptions.prototype['sharedCookieId'] = null;
+
+
+/** @inheritDoc */
+pn.ui.filter.GenericListFilterOptions.prototype.disposeInternal = function() {
+  pn.ui.filter.GenericListFilterOptions.superClass_.disposeInternal.call(this);
+
+  goog.array.forEach(this['additionalFilterTriggers'], goog.dispose);
+  goog.array.forEach(this['clearFiltersControls'], goog.dispose);
+
+  for (var i in this) { delete this[i]; }
+};
+
+goog.require('pn.ui.filter.FilterState');
+goog.require('pn.ui.filter.GenericListFilterOptions');
+
+goog.provide('pn.ui.filter.TableFilterOptions');
+
+
+
+/**
+ * @export
+ * @extends {pn.ui.filter.GenericListFilterOptions}
+ * @constructor
+ */
+pn.ui.filter.TableFilterOptions = function() {
+  pn.ui.filter.GenericListFilterOptions.call(this);
+};
+goog.inherits(pn.ui.filter.TableFilterOptions,
+    pn.ui.filter.GenericListFilterOptions);
+
+
+/** @type {string} */
+pn.ui.filter.TableFilterOptions.prototype['selectOptionLabel'] = 'Select...';
+
+
+/** @type {Element} */
+pn.ui.filter.TableFilterOptions.prototype['frozenHeaderTable'] = null;
+
+
+/** @inheritDoc */
+pn.ui.filter.TableFilterOptions.prototype.disposeInternal = function() {
+  goog.dispose(this['frozenHeaderTable']);
+
+  pn.ui.filter.TableFilterOptions.superClass_.disposeInternal.call(this);
+};
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -4281,6 +4428,7 @@ goog.debug.Error.prototype.name = 'CustomError';
  * but it will remove bar() because it assumes it does not have side-effects.
  *
  */
+
 goog.provide('goog.asserts');
 goog.provide('goog.asserts.AssertionError');
 
@@ -6450,15 +6598,15 @@ goog.dom.classes.set = function(element, className) {
 /**
  * Gets an array of class names on an element
  * @param {Node} element DOM node to get class of.
- * @return {Array} Class names on {@code element}.
+ * @return {!Array} Class names on {@code element}. Some browsers add extra
+ *     properties to the array. Do not depend on any of these!
  */
 goog.dom.classes.get = function(element) {
   var className = element.className;
   // Some types of elements don't have a className in IE (e.g. iframes).
   // Furthermore, in Firefox, className is not a string when the element is
   // an SVG element.
-  return className && typeof className.split == 'function' ?
-      className.split(/\s+/) : [];
+  return goog.isString(className) && className.match(/\S+/g) || [];
 };
 
 
@@ -6471,11 +6619,10 @@ goog.dom.classes.get = function(element) {
 goog.dom.classes.add = function(element, var_args) {
   var classes = goog.dom.classes.get(element);
   var args = goog.array.slice(arguments, 1);
-
-  var b = goog.dom.classes.add_(classes, args);
+  var expectedCount = classes.length + args.length;
+  goog.dom.classes.add_(classes, args);
   element.className = classes.join(' ');
-
-  return b;
+  return classes.length == expectedCount;
 };
 
 
@@ -6489,11 +6636,9 @@ goog.dom.classes.add = function(element, var_args) {
 goog.dom.classes.remove = function(element, var_args) {
   var classes = goog.dom.classes.get(element);
   var args = goog.array.slice(arguments, 1);
-
-  var b = goog.dom.classes.remove_(classes, args);
-  element.className = classes.join(' ');
-
-  return b;
+  var newClasses = goog.dom.classes.getDifference_(classes, args);
+  element.className = newClasses.join(' ');
+  return newClasses.length == classes.length - args.length;
 };
 
 
@@ -6504,40 +6649,30 @@ goog.dom.classes.remove = function(element, var_args) {
  * @param {Array.<string>} classes All class names for the element, will be
  *     updated to have the classes supplied in {@code args} added.
  * @param {Array.<string>} args Class names to add.
- * @return {boolean} Whether all classes in were added.
  * @private
  */
 goog.dom.classes.add_ = function(classes, args) {
-  var rv = 0;
   for (var i = 0; i < args.length; i++) {
     if (!goog.array.contains(classes, args[i])) {
       classes.push(args[i]);
-      rv++;
     }
   }
-  return rv == args.length;
 };
 
 
 /**
  * Helper method for {@link goog.dom.classes.remove} and
- * {@link goog.dom.classes.addRemove}. Removes one or more classes from the
- * supplied classes array.
- * @param {Array.<string>} classes All class names for the element, will be
- *     updated to have the classes supplied in {@code args} removed.
- * @param {Array.<string>} args Class names to remove.
- * @return {boolean} Whether all classes in were found and removed.
+ * {@link goog.dom.classes.addRemove}. Calculates the difference of two arrays.
+ * @param {!Array.<string>} arr1 First array.
+ * @param {!Array.<string>} arr2 Second array.
+ * @return {!Array.<string>} The first array without the elements of the second
+ *     array.
  * @private
  */
-goog.dom.classes.remove_ = function(classes, args) {
-  var rv = 0;
-  for (var i = 0; i < classes.length; i++) {
-    if (goog.array.contains(args, classes[i])) {
-      goog.array.splice(classes, i--, 1);
-      rv++;
-    }
-  }
-  return rv == args.length;
+goog.dom.classes.getDifference_ = function(arr1, arr2) {
+  return goog.array.filter(arr1, function(item) {
+    return !goog.array.contains(arr2, item);
+  });
 };
 
 
@@ -6580,9 +6715,9 @@ goog.dom.classes.swap = function(element, fromClass, toClass) {
  * more than two class names that you want to swap.
  *
  * @param {Node} element DOM node to swap classes on.
- * @param {string|Array.<string>|null} classesToRemove Class or classes to
+ * @param {?(string|Array.<string>)} classesToRemove Class or classes to
  *     remove, if null no classes are removed.
- * @param {string|Array.<string>|null} classesToAdd Class or classes to add, if
+ * @param {?(string|Array.<string>)} classesToAdd Class or classes to add, if
  *     null no classes are added.
  */
 goog.dom.classes.addRemove = function(element, classesToRemove, classesToAdd) {
@@ -6590,7 +6725,7 @@ goog.dom.classes.addRemove = function(element, classesToRemove, classesToAdd) {
   if (goog.isString(classesToRemove)) {
     goog.array.remove(classes, classesToRemove);
   } else if (goog.isArray(classesToRemove)) {
-    goog.dom.classes.remove_(classes, classesToRemove);
+    classes = goog.dom.classes.getDifference_(classes, classesToRemove);
   }
 
   if (goog.isString(classesToAdd) &&
@@ -6924,7 +7059,7 @@ goog.dom.NodeType = {
 
 /**
  * Gets the DomHelper object for the document where the element resides.
- * @param {Node|Window=} opt_element If present, gets the DomHelper for this
+ * @param {(Node|Window)=} opt_element If present, gets the DomHelper for this
  *     element.
  * @return {!goog.dom.DomHelper} The DomHelper.
  */
@@ -6989,7 +7124,7 @@ goog.dom.$ = goog.dom.getElement;
  *
  * @param {?string=} opt_tag Element tag name.
  * @param {?string=} opt_class Optional class name.
- * @param {Document|Element=} opt_el Optional element to look in.
+ * @param {(Document|Element)=} opt_el Optional element to look in.
  * @return { {length: number} } Array-like list of elements (only a length
  *     property and numerical indices are guaranteed to exist).
  */
@@ -7003,7 +7138,7 @@ goog.dom.getElementsByTagNameAndClass = function(opt_tag, opt_class, opt_el) {
  * Returns an array of all the elements with the provided className.
  * @see {goog.dom.query}
  * @param {string} className the name of the class to look for.
- * @param {Document|Element=} opt_el Optional element to look in.
+ * @param {(Document|Element)=} opt_el Optional element to look in.
  * @return { {length: number} } The items found with the class name provided.
  */
 goog.dom.getElementsByClass = function(className, opt_el) {
@@ -7042,7 +7177,7 @@ goog.dom.getElementByClass = function(className, opt_el) {
  * fast W3C Selectors API. However, the version of WebKit that shipped with
  * Safari 3.1 and Chrome has a bug where it will not correctly match mixed-
  * case class name selectors in quirks mode.
- * @param {!Element|Document} parent The parent document object.
+ * @param {!(Element|Document)} parent The parent document object.
  * @return {boolean} whether or not we can use parent.querySelector* APIs.
  * @private
  */
@@ -7059,7 +7194,7 @@ goog.dom.canUseQuerySelector_ = function(parent) {
  * @param {!Document} doc The document to get the elements in.
  * @param {?string=} opt_tag Element tag name.
  * @param {?string=} opt_class Optional class name.
- * @param {Document|Element=} opt_el Optional element to look in.
+ * @param {(Document|Element)=} opt_el Optional element to look in.
  * @return { {length: number} } Array-like list of elements (only a length
  *     property and numerical indices are guaranteed to exist).
  * @private
@@ -7462,11 +7597,11 @@ goog.dom.getWindow_ = function(doc) {
  * would return a div with two child paragraphs
  *
  * @param {string} tagName Tag to create.
- * @param {Object|Array.<string>|string=} opt_attributes If object, then a map
+ * @param {(Object|Array.<string>|string)=} opt_attributes If object, then a map
  *     of name-value pairs for attributes. If a string, then this is the
  *     className of the new element. If an array, the elements will be joined
  *     together as the className of the new element.
- * @param {...Object|string|Array|NodeList} var_args Further DOM nodes or
+ * @param {...(Object|string|Array|NodeList)} var_args Further DOM nodes or
  *     strings for text nodes. If one of the var_args is an array or NodeList,i
  *     its elements will be added as childNodes instead.
  * @return {!Element} Reference to a DOM node.
@@ -7568,10 +7703,10 @@ goog.dom.append_ = function(doc, parent, args, startIndex) {
 /**
  * Alias for {@code createDom}.
  * @param {string} tagName Tag to create.
- * @param {string|Object=} opt_attributes If object, then a map of name-value
+ * @param {(string|Object)=} opt_attributes If object, then a map of name-value
  *     pairs for attributes. If a string, then this is the className of the new
  *     element.
- * @param {...Object|string|Array|NodeList} var_args Further DOM nodes or
+ * @param {...(Object|string|Array|NodeList)} var_args Further DOM nodes or
  *     strings for text nodes. If one of the var_args is an array, its
  *     children will be added as childNodes instead.
  * @return {!Element} Reference to a DOM node.
@@ -7878,8 +8013,8 @@ goog.dom.replaceNode = function(newNode, oldNode) {
  * Does nothing if the element is not in the document.
  * @param {Element} element The element to flatten.
  * @return {Element|undefined} The original element, detached from the document
- *     tree, sans children; or undefined, if the element was not in the
- *     document to begin with.
+ *     tree, sans children; or undefined, if the element was not in the document
+ *     to begin with.
  */
 goog.dom.flattenElement = function(element) {
   var child, parent = element.parentNode;
@@ -7903,7 +8038,7 @@ goog.dom.flattenElement = function(element) {
 /**
  * Returns an array containing just the element children of the given element.
  * @param {Element} element The element whose element children we want.
- * @return {Array|NodeList} An array or array-like list of just the element
+ * @return {!(Array|NodeList)} An array or array-like list of just the element
  *     children of the given element.
  */
 goog.dom.getChildren = function(element) {
@@ -8382,7 +8517,7 @@ goog.dom.findNode = function(root, p) {
 
  * @param {Node} root The root of the tree to search.
  * @param {function(Node) : boolean} p The filter function.
- * @return {Array.<Node>} The found nodes or an empty array if none are found.
+ * @return {!Array.<!Node>} The found nodes or an empty array if none are found.
  */
 goog.dom.findNodes = function(root, p) {
   var rv = [];
@@ -8396,7 +8531,7 @@ goog.dom.findNodes = function(root, p) {
  * using a depth first search.
  * @param {Node} root The root of the tree to search.
  * @param {function(Node) : boolean} p The filter function.
- * @param {Array.<Node>} rv The found nodes are added to this array.
+ * @param {!Array.<!Node>} rv The found nodes are added to this array.
  * @param {boolean} findOne If true we exit after the first found node.
  * @return {boolean} Whether the search is complete or not. True in case findOne
  *     is true and the node is found. False otherwise.
@@ -8690,20 +8825,23 @@ goog.dom.isNodeList = function(val) {
  * tag name and/or class name. If the passed element matches the specified
  * criteria, the element itself is returned.
  * @param {Node} element The DOM node to start with.
- * @param {?string=} opt_tag The tag name to match (or null/undefined to match
- *     any node regardless of tag name). Must be uppercase (goog.dom.TagName).
+ * @param {?(goog.dom.TagName|string)=} opt_tag The tag name to match (or
+ *     null/undefined to match only based on class name).
  * @param {?string=} opt_class The class name to match (or null/undefined to
- *     match any node regardless of class name).
- * @return {Node} The first ancestor that matches the passed criteria, or
- *     null if none match.
+ *     match only based on tag name).
+ * @return {Element} The first ancestor that matches the passed criteria, or
+ *     null if no match is found.
  */
 goog.dom.getAncestorByTagNameAndClass = function(element, opt_tag, opt_class) {
+  if (!opt_tag && !opt_class) {
+    return null;
+  }
   var tagName = opt_tag ? opt_tag.toUpperCase() : null;
-  return goog.dom.getAncestor(element,
+  return /** @type {Element} */ (goog.dom.getAncestor(element,
       function(node) {
         return (!tagName || node.nodeName == tagName) &&
                (!opt_class || goog.dom.classes.has(node, opt_class));
-      }, true);
+      }, true));
 };
 
 
@@ -8712,13 +8850,12 @@ goog.dom.getAncestorByTagNameAndClass = function(element, opt_tag, opt_class) {
  * class name. If the passed element matches the specified criteria, the
  * element itself is returned.
  * @param {Node} element The DOM node to start with.
- * @param {?string=} opt_class The class name to match (or null/undefined to
- *     match any node regardless of class name).
- * @return {Node} The first ancestor that matches the passed criteria, or
+ * @param {string} className The class name to match.
+ * @return {Element} The first ancestor that matches the passed criteria, or
  *     null if none match.
  */
-goog.dom.getAncestorByClass = function(element, opt_class) {
-  return goog.dom.getAncestorByTagNameAndClass(element, null, opt_class);
+goog.dom.getAncestorByClass = function(element, className) {
+  return goog.dom.getAncestorByTagNameAndClass(element, null, className);
 };
 
 
@@ -8854,7 +8991,7 @@ goog.dom.DomHelper.prototype.$ = goog.dom.DomHelper.prototype.getElement;
  *
  * @param {?string=} opt_tag Element tag name or * for all tags.
  * @param {?string=} opt_class Optional class name.
- * @param {Document|Element=} opt_el Optional element to look in.
+ * @param {(Document|Element)=} opt_el Optional element to look in.
  * @return { {length: number} } Array-like list of elements (only a length
  *     property and numerical indices are guaranteed to exist).
  */
@@ -8883,7 +9020,7 @@ goog.dom.DomHelper.prototype.getElementsByClass = function(className, opt_el) {
  * Returns the first element we find matching the provided class name.
  * @see {goog.dom.query}
  * @param {string} className the name of the class to look for.
- * @param {Element|Document=} opt_el Optional element to look in.
+ * @param {(Element|Document)=} opt_el Optional element to look in.
  * @return {Element} The first item found with the class name provided.
  */
 goog.dom.DomHelper.prototype.getElementByClass = function(className, opt_el) {
@@ -8979,7 +9116,7 @@ goog.dom.DomHelper.prototype.createDom = function(tagName,
 /**
  * Alias for {@code createDom}.
  * @param {string} tagName Tag to create.
- * @param {Object|string=} opt_attributes If object, then a map of name-value
+ * @param {(Object|string)=} opt_attributes If object, then a map of name-value
  *     pairs for attributes. If a string, then this is the className of the new
  *     element.
  * @param {...goog.dom.Appendable} var_args Further DOM nodes or strings for
@@ -9240,8 +9377,8 @@ goog.dom.DomHelper.prototype.getOwnerDocument = goog.dom.getOwnerDocument;
 
 /**
  * Cross browser function for getting the document element of an iframe.
- * @param {HTMLIFrameElement|HTMLFrameElement} iframe Iframe element.
- * @return {!HTMLDocument} The frame content document.
+ * @param {Element} iframe Iframe element.
+ * @return {!Document} The frame content document.
  */
 goog.dom.DomHelper.prototype.getFrameContentDocument =
     goog.dom.getFrameContentDocument;
@@ -9270,7 +9407,7 @@ goog.dom.DomHelper.prototype.setTextContent = goog.dom.setTextContent;
  * a depth first search.
  * @param {Node} root The root of the tree to search.
  * @param {function(Node) : boolean} p The filter function.
- * @return {(Node, undefined)} The found node or undefined if none is found.
+ * @return {Node|undefined} The found node or undefined if none is found.
  */
 goog.dom.DomHelper.prototype.findNode = goog.dom.findNode;
 
@@ -9328,12 +9465,12 @@ goog.dom.DomHelper.prototype.getNodeTextOffset = goog.dom.getNodeTextOffset;
  * tag name and/or class name. If the passed element matches the specified
  * criteria, the element itself is returned.
  * @param {Node} element The DOM node to start with.
- * @param {?string=} opt_tag The tag name to match (or null/undefined to match
- *     any node regardless of tag name). Must be uppercase (goog.dom.TagName).
+ * @param {?(goog.dom.TagName|string)=} opt_tag The tag name to match (or
+ *     null/undefined to match only based on class name).
  * @param {?string=} opt_class The class name to match (or null/undefined to
- *     match any node regardless of class name).
- * @return {Node} The first ancestor that matches the passed criteria, or
- *     null if none match.
+ *     match only based on tag name).
+ * @return {Element} The first ancestor that matches the passed criteria, or
+ *     null if no match is found.
  */
 goog.dom.DomHelper.prototype.getAncestorByTagNameAndClass =
     goog.dom.getAncestorByTagNameAndClass;
@@ -9344,9 +9481,8 @@ goog.dom.DomHelper.prototype.getAncestorByTagNameAndClass =
  * class name. If the passed element matches the specified criteria, the
  * element itself is returned.
  * @param {Node} element The DOM node to start with.
- * @param {?string=} opt_class The class name to match (or null/undefined to
- *     match any node regardless of class name).
- * @return {Node} The first ancestor that matches the passed criteria, or
+ * @param {string} class The class name to match.
+ * @return {Element} The first ancestor that matches the passed criteria, or
  *     null if none match.
  */
 goog.dom.DomHelper.prototype.getAncestorByClass =
@@ -9804,7 +9940,7 @@ goog.style.getVisibleRectForElement = function(element) {
 
 
 /**
- * Changes the scroll position of {@code container} with the minimum amount so
+ * Calculate the scroll position of {@code container} with the minimum amount so
  * that the content and the borders of the given {@code element} become visible.
  * If the element is bigger than the container, its top left corner will be
  * aligned as close to the container's top left corner as possible.
@@ -9813,8 +9949,11 @@ goog.style.getVisibleRectForElement = function(element) {
  * @param {Element} container The container to scroll.
  * @param {boolean=} opt_center Whether to center the element in the container.
  *     Defaults to false.
+ * @return {!goog.math.Coordinate} The new scroll position of the container,
+ *     in form of goog.math.Coordinate(scrollLeft, scrollTop).
  */
-goog.style.scrollIntoContainerView = function(element, container, opt_center) {
+goog.style.getContainerOffsetToScrollInto =
+    function(element, container, opt_center) {
   // Absolute position of the element's border's top left corner.
   var elementPos = goog.style.getPageOffset(element);
   // Absolute position of the container's border's top left corner.
@@ -9829,10 +9968,12 @@ goog.style.scrollIntoContainerView = function(element, container, opt_center) {
   var spaceX = container.clientWidth - element.offsetWidth;
   var spaceY = container.clientHeight - element.offsetHeight;
 
+  var scrollLeft = container.scrollLeft;
+  var scrollTop = container.scrollTop;
   if (opt_center) {
     // All browsers round non-integer scroll positions down.
-    container.scrollLeft += relX - spaceX / 2;
-    container.scrollTop += relY - spaceY / 2;
+    scrollLeft += relX - spaceX / 2;
+    scrollTop += relY - spaceY / 2;
   } else {
     // This formula was designed to give the correct scroll values in the
     // following cases:
@@ -9841,9 +9982,29 @@ goog.style.scrollIntoContainerView = function(element, container, opt_center) {
     //   - it is above container (relY < 0) => scroll up by abs(relY)
     //   - it is below container (relY > spaceY) => scroll down by relY - spaceY
     //   - it is in the container => don't scroll
-    container.scrollLeft += Math.min(relX, Math.max(relX - spaceX, 0));
-    container.scrollTop += Math.min(relY, Math.max(relY - spaceY, 0));
+    scrollLeft += Math.min(relX, Math.max(relX - spaceX, 0));
+    scrollTop += Math.min(relY, Math.max(relY - spaceY, 0));
   }
+  return new goog.math.Coordinate(scrollLeft, scrollTop);
+};
+
+
+/**
+ * Changes the scroll position of {@code container} with the minimum amount so
+ * that the content and the borders of the given {@code element} become visible.
+ * If the element is bigger than the container, its top left corner will be
+ * aligned as close to the container's top left corner as possible.
+ *
+ * @param {Element} element The element to make visible.
+ * @param {Element} container The container to scroll.
+ * @param {boolean=} opt_center Whether to center the element in the container.
+ *     Defaults to false.
+ */
+goog.style.scrollIntoContainerView = function(element, container, opt_center) {
+  var offset =
+      goog.style.getContainerOffsetToScrollInto(element, container, opt_center);
+  container.scrollLeft = offset.x;
+  container.scrollTop = offset.y;
 };
 
 
@@ -10279,7 +10440,7 @@ goog.style.getSizeWithDisplay_ = function(element) {
 
 /**
  * Returns a bounding rectangle for a given element in page space.
- * @param {Element} element Element to get bounds of.
+ * @param {Element} element Element to get bounds of. Must not be display none.
  * @return {!goog.math.Rect} Bounding rectangle for the element.
  */
 goog.style.getBounds = function(element) {
@@ -11179,281 +11340,6 @@ goog.style.getScrollbarWidth = function(opt_className) {
   goog.dom.removeNode(outerDiv);
   return width;
 };
-
-goog.provide('picnet.ui.filter.ArrayExtension');
-
-if (!Array.indexOf) {
-  Array.prototype.indexOf = function(obj, start) {
-    for (var i = (start || 0); i < this.length; i++) {
-      if (this[i] == obj) {
-        return i;
-      }
-    }
-    return -1;
-  };
-}// Copyright 2011 The Closure Library Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS-IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-/**
- * @fileoverview Definition of the disposable interface.  A disposable object
- * has a dispose method to to clean up references and resources.
- * @author nnaze@google.com (Nathan Naze)
- */
-
-
-goog.provide('goog.disposable.IDisposable');
-
-
-
-/**
- * Interface for a disposable object.  If a instance requires cleanup
- * (references COM objects, DOM notes, or other disposable objects), it should
- * implement this interface (it may subclass goog.Disposable).
- * @interface
- */
-goog.disposable.IDisposable = function() {};
-
-
-/**
- * Disposes of the object and its resources.
- * @return {void} Nothing.
- */
-goog.disposable.IDisposable.prototype.dispose;
-
-
-/**
- * @return {boolean} Whether the object has been disposed of.
- */
-goog.disposable.IDisposable.prototype.isDisposed;
-// Copyright 2005 The Closure Library Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS-IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-/**
- * @fileoverview Implements the disposable interface. The dispose method is used
- * to clean up references and resources.
- * @author arv@google.com (Erik Arvidsson)
- */
-
-
-goog.provide('goog.Disposable');
-goog.provide('goog.dispose');
-
-goog.require('goog.disposable.IDisposable');
-
-
-
-/**
- * Class that provides the basic implementation for disposable objects. If your
- * class holds one or more references to COM objects, DOM nodes, or other
- * disposable objects, it should extend this class or implement the disposable
- * interface (defined in goog.disposable.IDisposable).
- * @constructor
- * @implements {goog.disposable.IDisposable}
- */
-goog.Disposable = function() {
-  if (goog.Disposable.ENABLE_MONITORING) {
-    goog.Disposable.instances_[goog.getUid(this)] = this;
-  }
-};
-
-
-/**
- * @define {boolean} Whether to enable the monitoring of the goog.Disposable
- *     instances. Switching on the monitoring is only recommended for debugging
- *     because it has a significant impact on performance and memory usage.
- *     If switched off, the monitoring code compiles down to 0 bytes.
- *     The monitoring expects that all disposable objects call the
- *     {@code goog.Disposable} base constructor.
- */
-goog.Disposable.ENABLE_MONITORING = false;
-
-
-/**
- * Maps the unique ID of every undisposed {@code goog.Disposable} object to
- * the object itself.
- * @type {!Object.<number, !goog.Disposable>}
- * @private
- */
-goog.Disposable.instances_ = {};
-
-
-/**
- * @return {!Array.<!goog.Disposable>} All {@code goog.Disposable} objects that
- *     haven't been disposed of.
- */
-goog.Disposable.getUndisposedObjects = function() {
-  var ret = [];
-  for (var id in goog.Disposable.instances_) {
-    if (goog.Disposable.instances_.hasOwnProperty(id)) {
-      ret.push(goog.Disposable.instances_[Number(id)]);
-    }
-  }
-  return ret;
-};
-
-
-/**
- * Clears the registry of undisposed objects but doesn't dispose of them.
- */
-goog.Disposable.clearUndisposedObjects = function() {
-  goog.Disposable.instances_ = {};
-};
-
-
-/**
- * Whether the object has been disposed of.
- * @type {boolean}
- * @private
- */
-goog.Disposable.prototype.disposed_ = false;
-
-
-/**
- * Disposables that should be disposed when this object is disposed.
- * @type {Array.<goog.disposable.IDisposable>}
- * @private
- */
-goog.Disposable.prototype.dependentDisposables_;
-
-
-/**
- * @return {boolean} Whether the object has been disposed of.
- */
-goog.Disposable.prototype.isDisposed = function() {
-  return this.disposed_;
-};
-
-
-/**
- * @return {boolean} Whether the object has been disposed of.
- * @deprecated Use {@link #isDisposed} instead.
- */
-goog.Disposable.prototype.getDisposed = goog.Disposable.prototype.isDisposed;
-
-
-/**
- * Disposes of the object. If the object hasn't already been disposed of, calls
- * {@link #disposeInternal}. Classes that extend {@code goog.Disposable} should
- * override {@link #disposeInternal} in order to delete references to COM
- * objects, DOM nodes, and other disposable objects. Reentrant.
- *
- * @return {void} Nothing.
- */
-goog.Disposable.prototype.dispose = function() {
-  if (!this.disposed_) {
-    // Set disposed_ to true first, in case during the chain of disposal this
-    // gets disposed recursively.
-    this.disposed_ = true;
-    this.disposeInternal();
-    if (goog.Disposable.ENABLE_MONITORING) {
-      var uid = goog.getUid(this);
-      if (!goog.Disposable.instances_.hasOwnProperty(uid)) {
-        throw Error(this + ' did not call the goog.Disposable base ' +
-            'constructor or was disposed of after a clearUndisposedObjects ' +
-            'call');
-      }
-      delete goog.Disposable.instances_[uid];
-    }
-  }
-};
-
-
-/**
- * Associates a disposable object with this object so that they will be disposed
- * together.
- * @param {goog.disposable.IDisposable} disposable that will be disposed when
- *     this object is disposed.
- */
-goog.Disposable.prototype.registerDisposable = function(disposable) {
-  if (!this.dependentDisposables_) {
-    this.dependentDisposables_ = [];
-  }
-  this.dependentDisposables_.push(disposable);
-};
-
-
-/**
- * Deletes or nulls out any references to COM objects, DOM nodes, or other
- * disposable objects. Classes that extend {@code goog.Disposable} should
- * override this method.
- * Not reentrant. To avoid calling it twice, it must only be called from the
- * subclass' {@code disposeInternal} method. Everywhere else the public
- * {@code dispose} method must be used.
- * For example:
- * <pre>
- *   mypackage.MyClass = function() {
- *     goog.base(this);
- *     // Constructor logic specific to MyClass.
- *     ...
- *   };
- *   goog.inherits(mypackage.MyClass, goog.Disposable);
- *
- *   mypackage.MyClass.prototype.disposeInternal = function() {
- *     goog.base(this, 'disposeInternal');
- *     // Dispose logic specific to MyClass.
- *     ...
- *   };
- * </pre>
- * @protected
- */
-goog.Disposable.prototype.disposeInternal = function() {
-  if (this.dependentDisposables_) {
-    goog.disposeAll.apply(null, this.dependentDisposables_);
-  }
-};
-
-
-/**
- * Calls {@code dispose} on the argument if it supports it. If obj is not an
- *     object with a dispose() method, this is a no-op.
- * @param {*} obj The object to dispose of.
- */
-goog.dispose = function(obj) {
-  if (obj && typeof obj.dispose == 'function') {
-    obj.dispose();
-  }
-};
-
-
-/**
- * Calls {@code dispose} on each member of the list that supports it. (If the
- * member is an ArrayLike, then {@code goog.disposeAll()} will be called
- * recursively on each of its members.) If the member is not an object with a
- * {@code dispose()} method, then it is ignored.
- * @param {...*} var_args The list.
- */
-goog.disposeAll = function(var_args) {
-  for (var i = 0, len = arguments.length; i < len; ++i) {
-    var disposable = arguments[i];
-    if (goog.isArrayLike(disposable)) {
-      goog.disposeAll.apply(null, disposable);
-    } else {
-      goog.dispose(disposable);
-    }
-  }
-};
 // Copyright 2008 The Closure Library Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -11716,10 +11602,12 @@ goog.events.BrowserFeature = {
       goog.userAgent.WEBKIT && goog.userAgent.isVersion('528'),
 
   /**
-   * Whether HTML5 network events fire on the window or otherwise document.body.
+   * Whether HTML5 network events fire on document.body, or otherwise the
+   * window.
    */
-  HTML5_NETWORK_EVENTS_FIRE_ON_WINDOW: !goog.userAgent.GECKO ||
-      goog.userAgent.isVersion('8')
+  HTML5_NETWORK_EVENTS_FIRE_ON_BODY:
+      goog.userAgent.GECKO && !goog.userAgent.isVersion('8') ||
+      goog.userAgent.IE && !goog.userAgent.isVersion('9')
 };
 // Copyright 2010 The Closure Library Authors. All Rights Reserved.
 //
@@ -12066,6 +11954,269 @@ goog.events.EventType = {
   // https://developer.mozilla.org/en/css/css_transitions#Browser_compatibility
   TRANSITIONEND: goog.userAgent.WEBKIT ? 'webkitTransitionEnd' :
       (goog.userAgent.OPERA ? 'oTransitionEnd' : 'transitionend')
+};
+// Copyright 2011 The Closure Library Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS-IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+/**
+ * @fileoverview Definition of the disposable interface.  A disposable object
+ * has a dispose method to to clean up references and resources.
+ * @author nnaze@google.com (Nathan Naze)
+ */
+
+
+goog.provide('goog.disposable.IDisposable');
+
+
+
+/**
+ * Interface for a disposable object.  If a instance requires cleanup
+ * (references COM objects, DOM notes, or other disposable objects), it should
+ * implement this interface (it may subclass goog.Disposable).
+ * @interface
+ */
+goog.disposable.IDisposable = function() {};
+
+
+/**
+ * Disposes of the object and its resources.
+ * @return {void} Nothing.
+ */
+goog.disposable.IDisposable.prototype.dispose;
+
+
+/**
+ * @return {boolean} Whether the object has been disposed of.
+ */
+goog.disposable.IDisposable.prototype.isDisposed;
+// Copyright 2005 The Closure Library Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS-IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+/**
+ * @fileoverview Implements the disposable interface. The dispose method is used
+ * to clean up references and resources.
+ * @author arv@google.com (Erik Arvidsson)
+ */
+
+
+goog.provide('goog.Disposable');
+goog.provide('goog.dispose');
+
+goog.require('goog.disposable.IDisposable');
+
+
+
+/**
+ * Class that provides the basic implementation for disposable objects. If your
+ * class holds one or more references to COM objects, DOM nodes, or other
+ * disposable objects, it should extend this class or implement the disposable
+ * interface (defined in goog.disposable.IDisposable).
+ * @constructor
+ * @implements {goog.disposable.IDisposable}
+ */
+goog.Disposable = function() {
+  if (goog.Disposable.ENABLE_MONITORING) {
+    goog.Disposable.instances_[goog.getUid(this)] = this;
+  }
+};
+
+
+/**
+ * @define {boolean} Whether to enable the monitoring of the goog.Disposable
+ *     instances. Switching on the monitoring is only recommended for debugging
+ *     because it has a significant impact on performance and memory usage.
+ *     If switched off, the monitoring code compiles down to 0 bytes.
+ *     The monitoring expects that all disposable objects call the
+ *     {@code goog.Disposable} base constructor.
+ */
+goog.Disposable.ENABLE_MONITORING = false;
+
+
+/**
+ * Maps the unique ID of every undisposed {@code goog.Disposable} object to
+ * the object itself.
+ * @type {!Object.<number, !goog.Disposable>}
+ * @private
+ */
+goog.Disposable.instances_ = {};
+
+
+/**
+ * @return {!Array.<!goog.Disposable>} All {@code goog.Disposable} objects that
+ *     haven't been disposed of.
+ */
+goog.Disposable.getUndisposedObjects = function() {
+  var ret = [];
+  for (var id in goog.Disposable.instances_) {
+    if (goog.Disposable.instances_.hasOwnProperty(id)) {
+      ret.push(goog.Disposable.instances_[Number(id)]);
+    }
+  }
+  return ret;
+};
+
+
+/**
+ * Clears the registry of undisposed objects but doesn't dispose of them.
+ */
+goog.Disposable.clearUndisposedObjects = function() {
+  goog.Disposable.instances_ = {};
+};
+
+
+/**
+ * Whether the object has been disposed of.
+ * @type {boolean}
+ * @private
+ */
+goog.Disposable.prototype.disposed_ = false;
+
+
+/**
+ * Disposables that should be disposed when this object is disposed.
+ * @type {Array.<goog.disposable.IDisposable>}
+ * @private
+ */
+goog.Disposable.prototype.dependentDisposables_;
+
+
+/**
+ * @return {boolean} Whether the object has been disposed of.
+ */
+goog.Disposable.prototype.isDisposed = function() {
+  return this.disposed_;
+};
+
+
+/**
+ * @return {boolean} Whether the object has been disposed of.
+ * @deprecated Use {@link #isDisposed} instead.
+ */
+goog.Disposable.prototype.getDisposed = goog.Disposable.prototype.isDisposed;
+
+
+/**
+ * Disposes of the object. If the object hasn't already been disposed of, calls
+ * {@link #disposeInternal}. Classes that extend {@code goog.Disposable} should
+ * override {@link #disposeInternal} in order to delete references to COM
+ * objects, DOM nodes, and other disposable objects. Reentrant.
+ *
+ * @return {void} Nothing.
+ */
+goog.Disposable.prototype.dispose = function() {
+  if (!this.disposed_) {
+    // Set disposed_ to true first, in case during the chain of disposal this
+    // gets disposed recursively.
+    this.disposed_ = true;
+    this.disposeInternal();
+    if (goog.Disposable.ENABLE_MONITORING) {
+      var uid = goog.getUid(this);
+      if (!goog.Disposable.instances_.hasOwnProperty(uid)) {
+        throw Error(this + ' did not call the goog.Disposable base ' +
+            'constructor or was disposed of after a clearUndisposedObjects ' +
+            'call');
+      }
+      delete goog.Disposable.instances_[uid];
+    }
+  }
+};
+
+
+/**
+ * Associates a disposable object with this object so that they will be disposed
+ * together.
+ * @param {goog.disposable.IDisposable} disposable that will be disposed when
+ *     this object is disposed.
+ */
+goog.Disposable.prototype.registerDisposable = function(disposable) {
+  if (!this.dependentDisposables_) {
+    this.dependentDisposables_ = [];
+  }
+  this.dependentDisposables_.push(disposable);
+};
+
+
+/**
+ * Deletes or nulls out any references to COM objects, DOM nodes, or other
+ * disposable objects. Classes that extend {@code goog.Disposable} should
+ * override this method.
+ * Not reentrant. To avoid calling it twice, it must only be called from the
+ * subclass' {@code disposeInternal} method. Everywhere else the public
+ * {@code dispose} method must be used.
+ * For example:
+ * <pre>
+ *   mypackage.MyClass = function() {
+ *     goog.base(this);
+ *     // Constructor logic specific to MyClass.
+ *     ...
+ *   };
+ *   goog.inherits(mypackage.MyClass, goog.Disposable);
+ *
+ *   mypackage.MyClass.prototype.disposeInternal = function() {
+ *     goog.base(this, 'disposeInternal');
+ *     // Dispose logic specific to MyClass.
+ *     ...
+ *   };
+ * </pre>
+ * @protected
+ */
+goog.Disposable.prototype.disposeInternal = function() {
+  if (this.dependentDisposables_) {
+    goog.disposeAll.apply(null, this.dependentDisposables_);
+  }
+};
+
+
+/**
+ * Calls {@code dispose} on the argument if it supports it. If obj is not an
+ *     object with a dispose() method, this is a no-op.
+ * @param {*} obj The object to dispose of.
+ */
+goog.dispose = function(obj) {
+  if (obj && typeof obj.dispose == 'function') {
+    obj.dispose();
+  }
+};
+
+
+/**
+ * Calls {@code dispose} on each member of the list that supports it. (If the
+ * member is an ArrayLike, then {@code goog.disposeAll()} will be called
+ * recursively on each of its members.) If the member is not an object with a
+ * {@code dispose()} method, then it is ignored.
+ * @param {...*} var_args The list.
+ */
+goog.disposeAll = function(var_args) {
+  for (var i = 0, len = arguments.length; i < len; ++i) {
+    var disposable = arguments[i];
+    if (goog.isArrayLike(disposable)) {
+      goog.disposeAll.apply(null, disposable);
+    } else {
+      goog.dispose(disposable);
+    }
+  }
 };
 // Copyright 2005 The Closure Library Authors. All Rights Reserved.
 //
@@ -13586,7 +13737,7 @@ goog.events.protectBrowserEventEntryPoint = function(errorHandler) {
  * Handles an event and dispatches it to the correct listeners. This
  * function is a proxy for the real listener the user specified.
  *
- * @param {string} key Unique key for the listener.
+ * @param {number} key Unique key for the listener.
  * @param {Event=} opt_evt Optional event object that gets passed in via the
  *     native event handlers.
  * @return {boolean} Result of the event handler.
@@ -13775,283 +13926,6 @@ goog.debug.entryPointRegistry.register(
       goog.events.handleBrowserEvent_ = transformer(
           goog.events.handleBrowserEvent_);
     });
-// Copyright 2005 The Closure Library Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS-IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-/**
- * @fileoverview Class to create objects which want to handle multiple events
- * and have their listeners easily cleaned up via a dispose method.
- *
- * Example:
- * <pre>
- * function Something() {
- *   goog.base(this);
- *
- *   ... set up object ...
- *
- *   // Add event listeners
- *   this.listen(this.starEl, goog.events.EventType.CLICK, this.handleStar);
- *   this.listen(this.headerEl, goog.events.EventType.CLICK, this.expand);
- *   this.listen(this.collapseEl, goog.events.EventType.CLICK, this.collapse);
- *   this.listen(this.infoEl, goog.events.EventType.MOUSEOVER, this.showHover);
- *   this.listen(this.infoEl, goog.events.EventType.MOUSEOUT, this.hideHover);
- * }
- * goog.inherits(Something, goog.events.EventHandler);
- *
- * Something.prototype.disposeInternal = function() {
- *   goog.base(this, 'disposeInternal');
- *   goog.dom.removeNode(this.container);
- * };
- *
- *
- * // Then elsewhere:
- *
- * var activeSomething = null;
- * function openSomething() {
- *   activeSomething = new Something();
- * }
- *
- * function closeSomething() {
- *   if (activeSomething) {
- *     activeSomething.dispose();  // Remove event listeners
- *     activeSomething = null;
- *   }
- * }
- * </pre>
- *
- */
-
-goog.provide('goog.events.EventHandler');
-
-goog.require('goog.Disposable');
-goog.require('goog.array');
-goog.require('goog.events');
-goog.require('goog.events.EventWrapper');
-
-
-
-/**
- * Super class for objects that want to easily manage a number of event
- * listeners.  It allows a short cut to listen and also provides a quick way
- * to remove all events listeners belonging to this object.
- * @param {Object=} opt_handler Object in whose scope to call the listeners.
- * @constructor
- * @extends {goog.Disposable}
- */
-goog.events.EventHandler = function(opt_handler) {
-  goog.Disposable.call(this);
-  this.handler_ = opt_handler;
-
-  /**
-   * Keys for events that are being listened to.
-   * @type {Array.<number>}
-   * @private
-   */
-  this.keys_ = [];
-};
-goog.inherits(goog.events.EventHandler, goog.Disposable);
-
-
-/**
- * Utility array used to unify the cases of listening for an array of types
- * and listening for a single event, without using recursion or allocating
- * an array each time.
- * @type {Array.<string>}
- * @private
- */
-goog.events.EventHandler.typeArray_ = [];
-
-
-/**
- * Listen to an event on a DOM node or EventTarget.  If the function is omitted
- * then the EventHandler's handleEvent method will be used.
- * @param {goog.events.EventTarget|EventTarget} src Event source.
- * @param {string|Array.<string>} type Event type to listen for or array of
- *     event types.
- * @param {Function|Object=} opt_fn Optional callback function to be used as the
- *    listener or an object with handleEvent function.
- * @param {boolean=} opt_capture Optional whether to use capture phase.
- * @param {Object=} opt_handler Object in whose scope to call the listener.
- * @return {goog.events.EventHandler} This object, allowing for chaining of
- *     calls.
- */
-goog.events.EventHandler.prototype.listen = function(src, type, opt_fn,
-                                                     opt_capture,
-                                                     opt_handler) {
-  if (!goog.isArray(type)) {
-    goog.events.EventHandler.typeArray_[0] = /** @type {string} */(type);
-    type = goog.events.EventHandler.typeArray_;
-  }
-  for (var i = 0; i < type.length; i++) {
-    // goog.events.listen generates unique keys so we don't have to check their
-    // presence in the this.keys_ array.
-    var key = (/** @type {number} */
-        goog.events.listen(src, type[i], opt_fn || this,
-                           opt_capture || false,
-                           opt_handler || this.handler_ || this));
-    this.keys_.push(key);
-  }
-
-  return this;
-};
-
-
-/**
- * Listen to an event on a DOM node or EventTarget.  If the function is omitted
- * then the EventHandler's handleEvent method will be used. After the event has
- * fired the event listener is removed from the target. If an array of event
- * types is provided, each event type will be listened to once.
- * @param {goog.events.EventTarget|EventTarget} src Event source.
- * @param {string|Array.<string>} type Event type to listen for or array of
- *     event types.
- * @param {Function|Object=} opt_fn Optional callback function to be used as the
- *    listener or an object with handleEvent function.
- * @param {boolean=} opt_capture Optional whether to use capture phase.
- * @param {Object=} opt_handler Object in whose scope to call the listener.
- * @return {goog.events.EventHandler} This object, allowing for chaining of
- *     calls.
- */
-goog.events.EventHandler.prototype.listenOnce = function(src, type, opt_fn,
-                                                         opt_capture,
-                                                         opt_handler) {
-  if (goog.isArray(type)) {
-    for (var i = 0; i < type.length; i++) {
-      this.listenOnce(src, type[i], opt_fn, opt_capture, opt_handler);
-    }
-  } else {
-    var key = (/** @type {number} */
-        goog.events.listenOnce(src, type, opt_fn || this, opt_capture,
-                               opt_handler || this.handler_ || this));
-    this.keys_.push(key);
-  }
-
-  return this;
-};
-
-
-/**
- * Adds an event listener with a specific event wrapper on a DOM Node or an
- * object that has implemented {@link goog.events.EventTarget}. A listener can
- * only be added once to an object.
- *
- * @param {EventTarget|goog.events.EventTarget} src The node to listen to
- *     events on.
- * @param {goog.events.EventWrapper} wrapper Event wrapper to use.
- * @param {Function|Object} listener Callback method, or an object with a
- *     handleEvent function.
- * @param {boolean=} opt_capt Whether to fire in capture phase (defaults to
- *     false).
- * @param {Object=} opt_handler Element in whose scope to call the listener.
- * @return {goog.events.EventHandler} This object, allowing for chaining of
- *     calls.
- */
-goog.events.EventHandler.prototype.listenWithWrapper = function(src, wrapper,
-    listener, opt_capt, opt_handler) {
-  wrapper.listen(src, listener, opt_capt, opt_handler || this.handler_, this);
-  return this;
-};
-
-
-/**
- * @return {number} Number of listeners registered by this handler.
- */
-goog.events.EventHandler.prototype.getListenerCount = function() {
-  return this.keys_.length;
-};
-
-
-/**
- * Unlistens on an event.
- * @param {goog.events.EventTarget|EventTarget} src Event source.
- * @param {string|Array.<string>} type Event type to listen for.
- * @param {Function|Object=} opt_fn Optional callback function to be used as the
- *    listener or an object with handleEvent function.
- * @param {boolean=} opt_capture Optional whether to use capture phase.
- * @param {Object=} opt_handler Object in whose scope to call the listener.
- * @return {goog.events.EventHandler} This object, allowing for chaining of
- *     calls.
- */
-goog.events.EventHandler.prototype.unlisten = function(src, type, opt_fn,
-                                                       opt_capture,
-                                                       opt_handler) {
-  if (goog.isArray(type)) {
-    for (var i = 0; i < type.length; i++) {
-      this.unlisten(src, type[i], opt_fn, opt_capture, opt_handler);
-    }
-  } else {
-    var listener = goog.events.getListener(src, type, opt_fn || this,
-        opt_capture, opt_handler || this.handler_ || this);
-
-    if (listener) {
-      var key = listener.key;
-      goog.events.unlistenByKey(key);
-      goog.array.remove(this.keys_, key);
-    }
-  }
-
-  return this;
-};
-
-
-/**
- * Removes an event listener which was added with listenWithWrapper().
- *
- * @param {EventTarget|goog.events.EventTarget} src The target to stop
- *     listening to events on.
- * @param {goog.events.EventWrapper} wrapper Event wrapper to use.
- * @param {Function|Object} listener The listener function to remove.
- * @param {boolean=} opt_capt In DOM-compliant browsers, this determines
- *     whether the listener is fired during the capture or bubble phase of the
- *     event.
- * @param {Object=} opt_handler Element in whose scope to call the listener.
- * @return {goog.events.EventHandler} This object, allowing for chaining of
- *     calls.
- */
-goog.events.EventHandler.prototype.unlistenWithWrapper = function(src, wrapper,
-    listener, opt_capt, opt_handler) {
-  wrapper.unlisten(src, listener, opt_capt, opt_handler || this.handler_, this);
-  return this;
-};
-
-
-/**
- * Unlistens to all events.
- */
-goog.events.EventHandler.prototype.removeAll = function() {
-  goog.array.forEach(this.keys_, goog.events.unlistenByKey);
-  this.keys_.length = 0;
-};
-
-
-/**
- * Disposes of this EventHandler and removes all listeners that it registered.
- * @override
- * @protected
- */
-goog.events.EventHandler.prototype.disposeInternal = function() {
-  goog.events.EventHandler.superClass_.disposeInternal.call(this);
-  this.removeAll();
-};
-
-
-/**
- * Default event handler
- * @param {goog.events.Event} e Event object.
- */
-goog.events.EventHandler.prototype.handleEvent = function(e) {
-  throw Error('EventHandler.handleEvent not implemented');
-};
 // Copyright 2005 The Closure Library Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14537,346 +14411,282 @@ goog.Timer.callOnce = function(listener, opt_delay, opt_handler) {
 goog.Timer.clear = function(timerId) {
   goog.Timer.defaultTimerObject.clearTimeout(timerId);
 };
-
-goog.provide('picnet.ui.filter.FilterState');
+// Copyright 2005 The Closure Library Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS-IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 /**
+ * @fileoverview Class to create objects which want to handle multiple events
+ * and have their listeners easily cleaned up via a dispose method.
+ *
+ * Example:
+ * <pre>
+ * function Something() {
+ *   goog.base(this);
+ *
+ *   ... set up object ...
+ *
+ *   // Add event listeners
+ *   this.listen(this.starEl, goog.events.EventType.CLICK, this.handleStar);
+ *   this.listen(this.headerEl, goog.events.EventType.CLICK, this.expand);
+ *   this.listen(this.collapseEl, goog.events.EventType.CLICK, this.collapse);
+ *   this.listen(this.infoEl, goog.events.EventType.MOUSEOVER, this.showHover);
+ *   this.listen(this.infoEl, goog.events.EventType.MOUSEOUT, this.hideHover);
+ * }
+ * goog.inherits(Something, goog.events.EventHandler);
+ *
+ * Something.prototype.disposeInternal = function() {
+ *   goog.base(this, 'disposeInternal');
+ *   goog.dom.removeNode(this.container);
+ * };
+ *
+ *
+ * // Then elsewhere:
+ *
+ * var activeSomething = null;
+ * function openSomething() {
+ *   activeSomething = new Something();
+ * }
+ *
+ * function closeSomething() {
+ *   if (activeSomething) {
+ *     activeSomething.dispose();  // Remove event listeners
+ *     activeSomething = null;
+ *   }
+ * }
+ * </pre>
+ *
+ */
+
+goog.provide('goog.events.EventHandler');
+
+goog.require('goog.Disposable');
+goog.require('goog.array');
+goog.require('goog.events');
+goog.require('goog.events.EventWrapper');
+
+
+
+/**
+ * Super class for objects that want to easily manage a number of event
+ * listeners.  It allows a short cut to listen and also provides a quick way
+ * to remove all events listeners belonging to this object.
+ * @param {Object=} opt_handler Object in whose scope to call the listeners.
  * @constructor
- * @param {string} id
- * @param {string} value
- * @param {number} idx
- * @param {string} type
+ * @extends {goog.Disposable}
  */
-picnet.ui.filter.FilterState = function(id, value, idx, type) {
-	/** 
-	 * @type {string}
-	 */
-	this.id = id;
-	/** 
-	 * @type {string}
-	 */
-	this.value = value;
-	/** 
-	 * @type {number}
-	 */
-	this.idx = idx;
-	/** 
-	 * @type {string}
-	 */
-    this.type = type;	
-};
+goog.events.EventHandler = function(opt_handler) {
+  goog.Disposable.call(this);
+  this.handler_ = opt_handler;
 
-/** 
- * @override
- * @return {string}
- */
-picnet.ui.filter.FilterState.prototype.toString = function() { return 'id[' + this.id + '] value[' + this.value + '] idx[' + this.idx + '] type[' + this.type + ']'; };
-
-goog.require('picnet.ui.filter.FilterState');
-
-goog.provide('picnet.ui.filter.GenericListFilterOptions');
-
-/**
- * @export
- * @constructor
- */
-picnet.ui.filter.GenericListFilterOptions = function () {};
-/**
- * @export
- * @type {!Array.<!Element>}
- */
-picnet.ui.filter.GenericListFilterOptions.prototype['additionalFilterTriggers'] = [];
-/**
- * @export
- * @type {!Array.<!Element>}
- */
-picnet.ui.filter.GenericListFilterOptions.prototype['clearFiltersControls'] = [];
-/**
- * @export
- * @type {number}
- */
-picnet.ui.filter.GenericListFilterOptions.prototype['filterDelay'] = 250;
-/**
- * @export
- * @type {string}
- */
-picnet.ui.filter.GenericListFilterOptions.prototype['filterToolTipMessage'] = 'Quotes (\") match phrases. (not) excludes a match from the results. (or) can be used to do Or searches. I.e. [red or blue] will match either red or blue. Numeric values support >=, >, <=, <, = and != operators.';
-/**
- * @export
- * @type {boolean}
- */
-picnet.ui.filter.GenericListFilterOptions.prototype['enableCookies'] = true;
-/**
- * @export
- * @type {function(picnet.ui.filter.FilterState, !Element, Array.<string>)?}
- */
-picnet.ui.filter.GenericListFilterOptions.prototype['matchingElement'] = null;
-/**
- * @export
- * @type {function(!Array.<!picnet.ui.filter.FilterState>)?}
- */
-picnet.ui.filter.GenericListFilterOptions.prototype['filteringElements'] = null;
-/**
- * @export
- * @type {string}
- */
-picnet.ui.filter.GenericListFilterOptions.prototype['sharedCookieId'] = null;
-
-
-goog.provide('picnet.ui.filter.SearchEngine');
-
-/**
- * @constructor
- */
-picnet.ui.filter.SearchEngine = function() {
   /**
+   * Keys for events that are being listened to.
+   * @type {Array.<number>}
    * @private
-   * @type {Object.<number>}
    */
-  this.precedences_ = {
-    'or' :1,
-    'and':2,
-    'not':3
-  };
+  this.keys_ = [];
 };
+goog.inherits(goog.events.EventHandler, goog.Disposable);
 
-/**	 
- * @param {string} textToMatch
- * @param {Array.<string>} postFixTokens	 
- * @param {boolean} exactMatch
- * @return {boolean}
- */
-picnet.ui.filter.SearchEngine.prototype.doesTextMatchTokens = function (textToMatch, postFixTokens, exactMatch) {
-	if (!postFixTokens) return true;
-	textToMatch = exactMatch ? textToMatch : textToMatch.toLowerCase();
-	var stackResult = [];
-	var stackResult1;
-	var stackResult2;
-
-	for (var i = 0; i < postFixTokens.length; i++) {
-		var token = postFixTokens[i];
-		if (token !== 'and' && token !== 'or' && token !== 'not') {
-			if (token.indexOf('>') === 0 || token.indexOf('<') === 0 || token.indexOf('=') === 0 || token.indexOf('!=') === 0) {
-				stackResult.push(this.doesNumberMatchToken(token, textToMatch));
-			} else {
-				stackResult.push(exactMatch ? textToMatch === token : textToMatch.indexOf(token) >= 0);
-			}
-		}
-		else {
-
-			if (token === 'and') {
-				stackResult1 = stackResult.pop();
-				stackResult2 = stackResult.pop();
-				stackResult.push(stackResult1 && stackResult2);
-			}
-			else if (token === 'or') {
-				stackResult1 = stackResult.pop();
-				stackResult2 = stackResult.pop();
-
-				stackResult.push(stackResult1 || stackResult2);
-			}
-			else if (token === 'not') {
-				stackResult1 = stackResult.pop();
-				stackResult.push(!stackResult1);
-			}				
-		}
-	}
-	return stackResult.length === 1 && stackResult.pop();
-};
-
-/**	 
- * @param {string} text
- * @return {Array.<string>}
- */
-picnet.ui.filter.SearchEngine.prototype.parseSearchTokens = function(text) {
-	if (!text) { return null; }		
-	text = text.toLowerCase();
-	var normalisedTokens = this.normaliseExpression(text);
-	normalisedTokens = this.allowFriendlySearchTerms(normalisedTokens);
-	var asPostFix = this.convertExpressionToPostFix(normalisedTokens);
-	var postFixTokens = asPostFix.split('|');
-	return postFixTokens;
-};
-	
-/**
- * @private
- * @param {string} token
- * @param {string} text
- * @return {boolean}
- */
-picnet.ui.filter.SearchEngine.prototype.doesNumberMatchToken = function(token, text) {
-	var op,exp,actual = this.getNumberFrom(text);	
-	if (token.indexOf('=') === 0) {
-		op = '=';
-		exp = parseFloat(token.substring(1));
-	} else if (token.indexOf('!=') === 0) {
-		op = '!=';
-		exp = parseFloat(token.substring(2));
-	} else if (token.indexOf('>=') === 0) {
-		op = '>=';
-		exp = parseFloat(token.substring(2));
-	} else if (token.indexOf('>') === 0) {
-		op = '>';
-		exp = parseFloat(token.substring(1));
-	} else if (token.indexOf('<=') === 0) {
-		op = '<=';
-		exp = parseFloat(token.substring(2));
-	} else if (token.indexOf('<') === 0) {
-		op = '<';
-		exp = parseFloat(token.substring(1));
-	} else {
-		return true;
-	}
-
-	switch (op) {
-		case '!=': return actual !== exp;
-		case '=': return actual === exp;
-		case '>=': return actual >= exp;
-		case '>': return actual > exp;
-		case '<=': return actual <= exp;
-		case '<': return actual < exp;
-	}
-    throw new Error('Could not find a number operation: ' + op);
-};
-
-/** 
- * @private
- * @param {string} txt
- * @return {number}
- */
-picnet.ui.filter.SearchEngine.prototype.getNumberFrom = function(txt) {
-	if (txt.charAt(0) === '$') {
-		txt = txt.substring(1);
-	}
-	return parseFloat(txt);
-};
-		
-/**	 
- * @private
- * @param {string} text
- * @return {!Array.<string>}
- */
-picnet.ui.filter.SearchEngine.prototype.normaliseExpression = function(text) {
-	var textTokens = this.getTokensFromExpression(text);
-	var normalisedTokens = [];
-
-	for (var i = 0; i < textTokens.length; i++) {
-		var token = textTokens[i];
-		token = this.normaliseTerm(normalisedTokens, token, '(');
-		token = this.normaliseTerm(normalisedTokens, token, ')');
-
-		if (token.length > 0) { normalisedTokens.push(token); }
-	}
-	return normalisedTokens;
-};
 
 /**
+ * Utility array used to unify the cases of listening for an array of types
+ * and listening for a single event, without using recursion or allocating
+ * an array each time.
+ * @type {Array.<string>}
  * @private
- * @param {!Array.<string>} tokens
- * @param {string} token
- * @param {string} term
  */
-picnet.ui.filter.SearchEngine.prototype.normaliseTerm = function(tokens, token, term) {
-	var idx = token.indexOf(term);
-	while (idx !== -1) {
-		if (idx > 0) { tokens.push(token.substring(0, idx)); }
+goog.events.EventHandler.typeArray_ = [];
 
-		tokens.push(term);
-		token = token.substring(idx + 1);
-		idx = token.indexOf(term);
-	}
-	return token;
-};
 
 /**
- * @private
- * @param {string} exp
- * @return {!Array.<string>}
+ * Listen to an event on a DOM node or EventTarget.  If the function is omitted
+ * then the EventHandler's handleEvent method will be used.
+ * @param {goog.events.EventTarget|EventTarget} src Event source.
+ * @param {string|Array.<string>} type Event type to listen for or array of
+ *     event types.
+ * @param {Function|Object=} opt_fn Optional callback function to be used as the
+ *    listener or an object with handleEvent function.
+ * @param {boolean=} opt_capture Optional whether to use capture phase.
+ * @param {Object=} opt_handler Object in whose scope to call the listener.
+ * @return {goog.events.EventHandler} This object, allowing for chaining of
+ *     calls.
  */
-picnet.ui.filter.SearchEngine.prototype.getTokensFromExpression = function(exp) {		
-	exp = exp.replace('>= ', '>=').replace('> ', '>').replace('<= ', '<=').replace('< ', '<').replace('!= ', '!=').replace('= ', '=');
-	var regex = /([^"^\s]+)\s*|"([^"]+)"\s*/g;		
-	var matches = [];
-	var match = null;
-	while (match = regex.exec(exp)) { matches.push(match[1] || match[2]); }
-	return matches;
+goog.events.EventHandler.prototype.listen = function(src, type, opt_fn,
+                                                     opt_capture,
+                                                     opt_handler) {
+  if (!goog.isArray(type)) {
+    goog.events.EventHandler.typeArray_[0] = /** @type {string} */(type);
+    type = goog.events.EventHandler.typeArray_;
+  }
+  for (var i = 0; i < type.length; i++) {
+    // goog.events.listen generates unique keys so we don't have to check their
+    // presence in the this.keys_ array.
+    var key = (/** @type {number} */
+        goog.events.listen(src, type[i], opt_fn || this,
+                           opt_capture || false,
+                           opt_handler || this.handler_ || this));
+    this.keys_.push(key);
+  }
+
+  return this;
 };
 
-/**	 
- * @private
- * @param {!Array.<string>} tokens
- * @return {!Array.<string>}
- */
-picnet.ui.filter.SearchEngine.prototype.allowFriendlySearchTerms = function(tokens) {
-	var newTokens = [];
-	var lastToken;
 
-	for (var i = 0; i < tokens.length; i++) {
-		var token = tokens[i];
-		if (!token || token.length === 0) { continue; }
-		if (token.indexOf('-') === 0) {
-			token = 'not';
-			tokens[i] = tokens[i].substring(1);
-			i--;
-		}
-		if (!lastToken) {
-			newTokens.push(token);
-		} else {
-			if (lastToken !== '(' && lastToken !== 'not' && lastToken !== 'and' && lastToken !== 'or' && token !== 'and' && token !== 'or' && token !== ')') {
-				newTokens.push('and');
-			}
-			newTokens.push(token);
-		}
-		lastToken = token;
-	}
-	return newTokens;
+/**
+ * Listen to an event on a DOM node or EventTarget.  If the function is omitted
+ * then the EventHandler's handleEvent method will be used. After the event has
+ * fired the event listener is removed from the target. If an array of event
+ * types is provided, each event type will be listened to once.
+ * @param {goog.events.EventTarget|EventTarget} src Event source.
+ * @param {string|Array.<string>} type Event type to listen for or array of
+ *     event types.
+ * @param {Function|Object=} opt_fn Optional callback function to be used as the
+ *    listener or an object with handleEvent function.
+ * @param {boolean=} opt_capture Optional whether to use capture phase.
+ * @param {Object=} opt_handler Object in whose scope to call the listener.
+ * @return {goog.events.EventHandler} This object, allowing for chaining of
+ *     calls.
+ */
+goog.events.EventHandler.prototype.listenOnce = function(src, type, opt_fn,
+                                                         opt_capture,
+                                                         opt_handler) {
+  if (goog.isArray(type)) {
+    for (var i = 0; i < type.length; i++) {
+      this.listenOnce(src, type[i], opt_fn, opt_capture, opt_handler);
+    }
+  } else {
+    var key = (/** @type {number} */
+        goog.events.listenOnce(src, type, opt_fn || this, opt_capture,
+                               opt_handler || this.handler_ || this));
+    this.keys_.push(key);
+  }
+
+  return this;
 };
 
-/**	 
- * @private
- * @param {!Array.<string>} normalisedTokens
- * @return {string}
+
+/**
+ * Adds an event listener with a specific event wrapper on a DOM Node or an
+ * object that has implemented {@link goog.events.EventTarget}. A listener can
+ * only be added once to an object.
+ *
+ * @param {EventTarget|goog.events.EventTarget} src The node to listen to
+ *     events on.
+ * @param {goog.events.EventWrapper} wrapper Event wrapper to use.
+ * @param {Function|Object} listener Callback method, or an object with a
+ *     handleEvent function.
+ * @param {boolean=} opt_capt Whether to fire in capture phase (defaults to
+ *     false).
+ * @param {Object=} opt_handler Element in whose scope to call the listener.
+ * @return {goog.events.EventHandler} This object, allowing for chaining of
+ *     calls.
  */
-picnet.ui.filter.SearchEngine.prototype.convertExpressionToPostFix = function(normalisedTokens) {
-	var postFix = '';
-	var stackOps = [];
-	var stackOperator;
-	for (var i = 0; i < normalisedTokens.length; i++) {
-		var token = normalisedTokens[i];
-		if (token.length === 0) continue;
-		if (token !== 'and' && token !== 'or' && token !== 'not' && token !== '(' && token !== ')') {
-			postFix = postFix + '|' + token;
-		}
-		else {
-			if (stackOps.length === 0 || token === '(') {
-				stackOps.push(token);
-			}
-			else {
-				if (token === ')') {
-					stackOperator = stackOps.pop();
-					while (stackOperator !== '(' && stackOps.length > 0) {
-						postFix = postFix + '|' + stackOperator;
-						stackOperator = stackOps.pop();
-					}
-				}
-				else if (stackOps[stackOps.length - 1] === '(') {
-					stackOps.push(token);
-				} else {
-					while (stackOps.length !== 0) {
-						if (stackOps[stackOps.length - 1] === '(') { break; }
-						if (this.precedences_[stackOps[stackOps.length - 1]] > this.precedences_[token]) {
-							stackOperator = stackOps.pop();
-							postFix = postFix + '|' + stackOperator;
-						}
-						else { break; }
-					}
-					stackOps.push(token);
-				}
-			}
-		}
-	}
-	while (stackOps.length > 0) { postFix = postFix + '|' + stackOps.pop(); }
-	return postFix.substring(1);
+goog.events.EventHandler.prototype.listenWithWrapper = function(src, wrapper,
+    listener, opt_capt, opt_handler) {
+  wrapper.listen(src, listener, opt_capt, opt_handler || this.handler_, this);
+  return this;
+};
+
+
+/**
+ * @return {number} Number of listeners registered by this handler.
+ */
+goog.events.EventHandler.prototype.getListenerCount = function() {
+  return this.keys_.length;
+};
+
+
+/**
+ * Unlistens on an event.
+ * @param {goog.events.EventTarget|EventTarget} src Event source.
+ * @param {string|Array.<string>} type Event type to listen for.
+ * @param {Function|Object=} opt_fn Optional callback function to be used as the
+ *    listener or an object with handleEvent function.
+ * @param {boolean=} opt_capture Optional whether to use capture phase.
+ * @param {Object=} opt_handler Object in whose scope to call the listener.
+ * @return {goog.events.EventHandler} This object, allowing for chaining of
+ *     calls.
+ */
+goog.events.EventHandler.prototype.unlisten = function(src, type, opt_fn,
+                                                       opt_capture,
+                                                       opt_handler) {
+  if (goog.isArray(type)) {
+    for (var i = 0; i < type.length; i++) {
+      this.unlisten(src, type[i], opt_fn, opt_capture, opt_handler);
+    }
+  } else {
+    var listener = goog.events.getListener(src, type, opt_fn || this,
+        opt_capture, opt_handler || this.handler_ || this);
+
+    if (listener) {
+      var key = listener.key;
+      goog.events.unlistenByKey(key);
+      goog.array.remove(this.keys_, key);
+    }
+  }
+
+  return this;
+};
+
+
+/**
+ * Removes an event listener which was added with listenWithWrapper().
+ *
+ * @param {EventTarget|goog.events.EventTarget} src The target to stop
+ *     listening to events on.
+ * @param {goog.events.EventWrapper} wrapper Event wrapper to use.
+ * @param {Function|Object} listener The listener function to remove.
+ * @param {boolean=} opt_capt In DOM-compliant browsers, this determines
+ *     whether the listener is fired during the capture or bubble phase of the
+ *     event.
+ * @param {Object=} opt_handler Element in whose scope to call the listener.
+ * @return {goog.events.EventHandler} This object, allowing for chaining of
+ *     calls.
+ */
+goog.events.EventHandler.prototype.unlistenWithWrapper = function(src, wrapper,
+    listener, opt_capt, opt_handler) {
+  wrapper.unlisten(src, listener, opt_capt, opt_handler || this.handler_, this);
+  return this;
+};
+
+
+/**
+ * Unlistens to all events.
+ */
+goog.events.EventHandler.prototype.removeAll = function() {
+  goog.array.forEach(this.keys_, goog.events.unlistenByKey);
+  this.keys_.length = 0;
+};
+
+
+/**
+ * Disposes of this EventHandler and removes all listeners that it registered.
+ * @override
+ * @protected
+ */
+goog.events.EventHandler.prototype.disposeInternal = function() {
+  goog.events.EventHandler.superClass_.disposeInternal.call(this);
+  this.removeAll();
+};
+
+
+/**
+ * Default event handler
+ * @param {goog.events.Event} e Event object.
+ */
+goog.events.EventHandler.prototype.handleEvent = function(e) {
+  throw Error('EventHandler.handleEvent not implemented');
 };
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
 //
@@ -15097,6 +14907,9 @@ goog.net.Cookies.prototype.get = function(name, opt_default) {
     if (part.indexOf(nameEq) == 0) {
       return part.substr(nameEq.length);
     }
+    if (part == name) {
+      return '';
+    }
   }
   return opt_default;
 };
@@ -15281,250 +15094,584 @@ goog.net.cookies = new goog.net.Cookies(document);
  */
 goog.net.cookies.MAX_COOKIE_LENGTH = goog.net.Cookies.MAX_COOKIE_LENGTH;
 
-goog.require('goog.net.cookies');
+goog.provide('pn.ui.filter.SearchEngine');
+
+
+
+/**
+ * @constructor
+ */
+pn.ui.filter.SearchEngine = function() {
+
+  /**
+   * @private
+   * @enum {number}
+   */
+  this.precedences_ = {
+    'or' : 1,
+    'and': 2,
+    'not': 3
+  };
+};
+
+
+/**
+ * @param {string} text The text to match against the given expression.
+ * @param {string} expression  The expression to use when evaluating the given
+ *    text.
+ * @return {boolean} Wether the given expression matches the given text.
+ */
+pn.ui.filter.SearchEngine.prototype.matches = function(text, expression) {
+  if (!expression) return true;
+  if (!text) return false;
+
+  var tokens = this.parseSearchTokens(expression);
+  return this.doesTextMatchTokens(text, tokens, false);
+};
+
+
+/**
+ * @param {string} textToMatch The text to match against the filter tokens.
+ * @param {Array.<string>} postFixTokens The filter tokens to match against the
+ *    specified text.
+ * @param {boolean} exactMatch Wether an exact match is needed.
+ * @return {boolean} Wether the given text matches the specified filter tokens.
+ */
+pn.ui.filter.SearchEngine.prototype.doesTextMatchTokens =
+    function(textToMatch, postFixTokens, exactMatch) {
+  if (!postFixTokens) return true;
+  textToMatch = exactMatch ? textToMatch : textToMatch.toLowerCase();
+  var stackResult = [];
+  var stackResult1;
+  var stackResult2;
+
+  for (var i = 0; i < postFixTokens.length; i++) {
+    var token = postFixTokens[i];
+    if (token !== 'and' && token !== 'or' && token !== 'not') {
+      if (token.indexOf('>') === 0 || token.indexOf('<') === 0 ||
+          token.indexOf('=') === 0 || token.indexOf('!=') === 0) {
+        stackResult.push(this.doesNumberMatchToken_(token, textToMatch));
+      } else {
+        stackResult.push(exactMatch ?
+            textToMatch === token :
+            textToMatch.indexOf(token) >= 0);
+      }
+    }
+    else {
+
+      if (token === 'and') {
+        stackResult1 = stackResult.pop();
+        stackResult2 = stackResult.pop();
+        stackResult.push(stackResult1 && stackResult2);
+      }
+      else if (token === 'or') {
+        stackResult1 = stackResult.pop();
+        stackResult2 = stackResult.pop();
+
+        stackResult.push(stackResult1 || stackResult2);
+      }
+      else if (token === 'not') {
+        stackResult1 = stackResult.pop();
+        stackResult.push(!stackResult1);
+      }
+    }
+  }
+  return stackResult.length === 1 && stackResult.pop();
+};
+
+
+/**
+ * @param {string} text The filter text to use when testing entry for match.
+ * @return {Array.<string>} The normalized postfix tokens representation of
+ *    this text.
+ */
+pn.ui.filter.SearchEngine.prototype.parseSearchTokens = function(text) {
+  if (!text) { return null; }
+  text = text.toLowerCase();
+  var normalisedTokens = this.normaliseExpression_(text);
+  normalisedTokens = this.allowFriendlySearchTerms_(normalisedTokens);
+  var asPostFix = this.convertExpressionToPostFix_(normalisedTokens);
+  var postFixTokens = asPostFix.split('|');
+  return postFixTokens;
+};
+
+
+/**
+ * @private
+ * @param {string} token The filter token to compare against the specified text.
+ * @param {string} text The text to compare against the filter token.
+ * @return {boolean} Wether the specified text matches the given token.
+ */
+pn.ui.filter.SearchEngine.prototype.doesNumberMatchToken_ =
+    function(token, text) {
+  var op, exp, actual = this.getNumberFrom_(text);
+  if (token.indexOf('=') === 0) {
+    op = '=';
+    exp = parseFloat(token.substring(1));
+  } else if (token.indexOf('!=') === 0) {
+    op = '!=';
+    exp = parseFloat(token.substring(2));
+  } else if (token.indexOf('>=') === 0) {
+    op = '>=';
+    exp = parseFloat(token.substring(2));
+  } else if (token.indexOf('>') === 0) {
+    op = '>';
+    exp = parseFloat(token.substring(1));
+  } else if (token.indexOf('<=') === 0) {
+    op = '<=';
+    exp = parseFloat(token.substring(2));
+  } else if (token.indexOf('<') === 0) {
+    op = '<';
+    exp = parseFloat(token.substring(1));
+  } else {
+    return true;
+  }
+
+  switch (op) {
+    case '!=': return actual !== exp;
+    case '=': return actual === exp;
+    case '>=': return actual >= exp;
+    case '>': return actual > exp;
+    case '<=': return actual <= exp;
+    case '<': return actual < exp;
+  }
+  throw new Error('Could not find a number operation: ' + op);
+};
+
+
+/**
+ * @private
+ * @param {string} txt The text to try to get the number from.
+ * @return {number} The number parsed from the given text.
+ */
+pn.ui.filter.SearchEngine.prototype.getNumberFrom_ = function(txt) {
+  if (txt.charAt(0) === '$') {
+    txt = txt.substring(1);
+  }
+  return parseFloat(txt);
+};
+
+
+/**
+ * @private
+ * @param {string} text The text to normalise.
+ * @return {!Array.<string>} The normalised tokens.
+ */
+pn.ui.filter.SearchEngine.prototype.normaliseExpression_ = function(text) {
+  var textTokens = this.getTokensFromExpression_(text);
+  var normalisedTokens = [];
+
+  for (var i = 0; i < textTokens.length; i++) {
+    var token = textTokens[i];
+    token = this.normaliseTerm_(normalisedTokens, token, '(');
+    token = this.normaliseTerm_(normalisedTokens, token, ')');
+
+    if (token.length > 0) { normalisedTokens.push(token); }
+  }
+  return normalisedTokens;
+};
+
+
+/**
+ * @private
+ * @param {!Array.<string>} tokens The tokens array to add more normalised
+ *    tokens to.
+ * @param {string} token The token to normalise.
+ * @param {string} term The expression term to check.
+ * @return {string} The normalised term.
+ */
+pn.ui.filter.SearchEngine.prototype.normaliseTerm_ =
+    function(tokens, token, term) {
+  var idx = token.indexOf(term);
+  while (idx !== -1) {
+    if (idx > 0) { tokens.push(token.substring(0, idx)); }
+
+    tokens.push(term);
+    token = token.substring(idx + 1);
+    idx = token.indexOf(term);
+  }
+  return token;
+};
+
+
+/**
+ * @private
+ * @param {string} exp The expression to tokenise.
+ * @return {!Array.<string>} The tokenised expression.
+ */
+pn.ui.filter.SearchEngine.prototype.getTokensFromExpression_ = function(exp) {
+  exp = exp.replace('>= ', '>=').replace('> ', '>').replace('<= ', '<=').
+      replace('< ', '<').replace('!= ', '!=').replace('= ', '=');
+  var regex = /([^"^\s]+)\s*|"([^"]+)"\s*/g;
+  var matches = [];
+  var match = null;
+  while (match = regex.exec(exp)) { matches.push(match[1] || match[2]); }
+  return matches;
+};
+
+
+/**
+ * @private
+ * @param {!Array.<string>} tokens The tokens to interpret.
+ * @return {!Array.<string>} The interpreted expression terms.
+ */
+pn.ui.filter.SearchEngine.prototype.allowFriendlySearchTerms_ =
+    function(tokens) {
+  var newTokens = [];
+  var lastToken;
+
+  for (var i = 0; i < tokens.length; i++) {
+    var token = tokens[i];
+    if (!token || token.length === 0) { continue; }
+    if (token.indexOf('-') === 0) {
+      token = 'not';
+      tokens[i] = tokens[i].substring(1);
+      i--;
+    }
+    if (!lastToken) {
+      newTokens.push(token);
+    } else {
+      if (lastToken !== '(' && lastToken !== 'not' && lastToken !== 'and' &&
+          lastToken !== 'or' && token !== 'and' && token !== 'or' &&
+          token !== ')') {
+        newTokens.push('and');
+      }
+      newTokens.push(token);
+    }
+    lastToken = token;
+  }
+  return newTokens;
+};
+
+
+/**
+ * @private
+ * @param {!Array.<string>} normalisedTokens The tokens to post fix.
+ * @return {string} The postfixed expression.
+ */
+pn.ui.filter.SearchEngine.prototype.convertExpressionToPostFix_ =
+    function(normalisedTokens) {
+  var postFix = '';
+  var stackOps = [];
+  var stackOperator;
+  for (var i = 0; i < normalisedTokens.length; i++) {
+    var token = normalisedTokens[i];
+    if (token.length === 0) continue;
+    if (token !== 'and' && token !== 'or' && token !== 'not' &&
+        token !== '(' && token !== ')') {
+      postFix = postFix + '|' + token;
+    }
+    else {
+      if (stackOps.length === 0 || token === '(') {
+        stackOps.push(token);
+      }
+      else {
+        if (token === ')') {
+          stackOperator = stackOps.pop();
+          while (stackOperator !== '(' && stackOps.length > 0) {
+            postFix = postFix + '|' + stackOperator;
+            stackOperator = stackOps.pop();
+          }
+        }
+        else if (stackOps[stackOps.length - 1] === '(') {
+          stackOps.push(token);
+        } else {
+          while (stackOps.length !== 0) {
+            if (stackOps[stackOps.length - 1] === '(') { break; }
+            if (this.precedences_[stackOps[stackOps.length - 1]] >
+                this.precedences_[token]) {
+              stackOperator = stackOps.pop();
+              postFix = postFix + '|' + stackOperator;
+            }
+            else { break; }
+          }
+          stackOps.push(token);
+        }
+      }
+    }
+  }
+  while (stackOps.length > 0) { postFix = postFix + '|' + stackOps.pop(); }
+  return postFix.substring(1);
+};
+
+goog.require('goog.Disposable');
+goog.require('goog.Timer');
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.events');
 goog.require('goog.events.EventHandler');
+goog.require('goog.net.cookies');
 goog.require('goog.style');
-goog.require('goog.Disposable');
-goog.require('goog.Timer');
+goog.require('pn.ui.filter.FilterState');
+goog.require('pn.ui.filter.GenericListFilterOptions');
+goog.require('pn.ui.filter.SearchEngine');
 
-goog.require('picnet.ui.filter.FilterState');
-goog.require('picnet.ui.filter.GenericListFilterOptions');
-goog.require('picnet.ui.filter.SearchEngine');
+goog.provide('pn.ui.filter.GenericListFilter');
 
-goog.provide('picnet.ui.filter.GenericListFilter');
 
-/** 
+
+/**
  * @constructor
  * @extends {goog.Disposable}
- * @export
  *
- * @param {Element} filterInput
- * @param {!Element} list
- * @param {!picnet.ui.filter.GenericListFilterOptions} options
+ * @param {Element} input The DOM input control that will trigger the filter.
+ * @param {!Element} list The DOM list element to filter.
+ * @param {!pn.ui.filter.GenericListFilterOptions} options The options to
+ *    apply to this filtering.
  */
-picnet.ui.filter.GenericListFilter = function(filterInput, list, options) {    
-    goog.Disposable.call(this);
+pn.ui.filter.GenericListFilter = function(input, list, options) {
+  goog.Disposable.call(this);
 
-    /**
-	 * @protected
-	 * @type {!Element}
-	 */
-	this.list = list;	
-    /**
-	 * @protected
-	 * @type {!picnet.ui.filter.GenericListFilterOptions}
-	 */
-	this.options = options;	
+  /**
+   * @protected
+   * @type {!Element}
+   */
+  this.list = list;
 
-    /**
-     * @private
-     * @type {Element} filterInput
-     */
-     this.filterInput = filterInput;    
-     /** 
-      * @protected
-	  * @type {!Array.<!Element>}
-	  */
-    this.listItems;	    
-    /** 
-      * @protected
-	  * @type {!Array.<!Element>}
-	  */
-    this.filters = [this.filterInput];
-	/**
-	 * @private
-	 * @type {goog.events.EventHandler}
-	 */
-	this.eventHandler = new goog.events.EventHandler(this);	
-	/** 
-     * @private
-	 * @type {number}
-	 */
-	this.lastkeytime;
-	/** 
-     * @private
-	 * @type {number}
-	 */
-    this.lastTimerID;    
-	/** 
-     * @private
-	 * @type {boolean}
-	 */
-    this.cancelQuickFind;
-	/**
-     * @private 
-	 * @type {string}
-	 */
-    this.filterKey;        
-	
-    /**
-     * @private
-     * @type {!picnet.ui.filter.SearchEngine}            
-     */
-     this.search = new picnet.ui.filter.SearchEngine();
+  /**
+   * @protected
+   * @type {!pn.ui.filter.GenericListFilterOptions}
+   */
+  this.options = options;
 
-	this.initialiseFilters(); // Initialise
+  /**
+   * @private
+   * @type {Element} input
+   */
+  this.input_ = input;
+
+  /**
+   * @protected
+   * @type {!Array.<!Element>}
+   */
+  this.listItems = [];
+
+  /**
+   * @protected
+   * @type {!Array.<!Element>}
+   */
+  this.filters = [this.input_];
+
+  /**
+   * @private
+   * @type {goog.events.EventHandler}
+   */
+  this.eh_ = new goog.events.EventHandler(this);
+
+  /**
+   * @private
+   * @type {number}
+   */
+  this.lastkeytime_ = 0;
+
+  /**
+   * @private
+   * @type {number}
+   */
+  this.lastTimerID_ = 0;
+
+  /**
+   * @private
+   * @type {boolean}
+   */
+  this.cancelQuickFind_ = false;
+
+  /**
+   * @private
+   * @type {string}
+   */
+  this.filterKey_ = '';
+
+  /**
+   * @private
+   * @type {!pn.ui.filter.SearchEngine}
+   */
+  this.search_ = new pn.ui.filter.SearchEngine();
+
+  this.initialiseFilters(); // Initialise
 };
-goog.inherits(picnet.ui.filter.GenericListFilter, goog.Disposable);
+goog.inherits(pn.ui.filter.GenericListFilter, goog.Disposable);
 
-
-/** 
-* @private
-* @type {number}
-*/
-picnet.ui.filter.GenericListFilter.filteridx = 0;
-
-/**
- * @param {!Element} list
- */
-picnet.ui.filter.GenericListFilter.prototype.resetList = function(list) {	
-	this.list = list;
-	this.initialiseControlCaches();
-};
-
-/**
- * @protected	 
- */
-picnet.ui.filter.GenericListFilter.prototype.getListId = function() {
-  return this.list.getAttribute('id') || this.list.getAttribute('name') || '';
-};
-
-/**
- * @protected	 
- */
-picnet.ui.filter.GenericListFilter.prototype.initialiseFilters = function() {
-  var listid = this.getListId();
-  this.filterKey = listid + '_' + (++picnet.ui.filter.GenericListFilter.filteridx) + '_filters';
-  this.initialiseControlCaches();
-  this.registerListenersOnFilters();
-  this.loadFiltersFromCookie();
-};
-
-/**
- * @private	 
- */
-picnet.ui.filter.GenericListFilter.prototype.registerListenersOnFilters = function () {
-    goog.array.forEach(this.filters, function (filter) {
-        this.eventHandler.listen(filter, filter.getAttribute('type') === 'text' ? goog.events.EventType.KEYUP : goog.events.EventType.CHANGE, this.onFilterChanged, false, this);
-    }, this);
-
-    if (this.options['clearFiltersControls']) {
-        for (var i = 0; i < this.options['clearFiltersControls'].length; i++) {
-            if (this.options['clearFiltersControls'][i].length) this.options['clearFiltersControls'][i] = this.options['clearFiltersControls'][i][0];
-            this.eventHandler.listen(this.options['clearFiltersControls'][i], goog.events.EventType.CLICK, this.clearAllFilters, false, this);
-        }
-    }
-
-    if (!this.options['additionalFilterTriggers']) return;
-
-    for (i = 0; i < this.options['additionalFilterTriggers'].length; i++) {
-        /** @type {!Element} */
-        var trigger = this.options['additionalFilterTriggers'][i];
-        if (trigger.length) trigger = this.options['additionalFilterTriggers'][i] = trigger[0]; // Remove jQueryObject
-
-        var type = trigger.options ? 'select-one' : trigger.getAttribute('type');
-        switch (type) {
-            case 'select-one':
-                this.eventHandler.listen(trigger, goog.events.EventType.CHANGE, this.onFilterChanged, false, this);
-                break;
-            case 'text':
-                trigger.setAttribute('title', this.options['filterToolTipMessage']);
-                this.eventHandler.listen(trigger, goog.events.EventType.KEYUP, this.onFilterChanged, false, this);
-                break;
-            case 'checkbox':
-                this.eventHandler.listen(trigger, goog.events.EventType.CLICK, this.onFilterChanged, false, this);
-                break;
-            default:
-                throw 'Filter type ' + type + ' is not supported';
-        }
-    }
-};
-
-/** 
- */
-picnet.ui.filter.GenericListFilter.prototype.clearAllFilters = function() {	
-    goog.array.forEach(this.filters, this.clearFilterValue, this);
-    if (this.options['additionalFilterTriggers']) {
-		goog.array.forEach(this.options['additionalFilterTriggers'], this.clearFilterValue, this);            
-    }
-    this.refresh();
-};
-	
-picnet.ui.filter.GenericListFilter.prototype.clearFilterValue = function(f) {		
-	var type = f.options ? 'select-one' : f.getAttribute('type');
-	switch (type) {
-		case 'select-one':
-			f.selectedIndex = 0;
-			break;
-		case 'text':
-			f.value = '';
-			break;
-		case 'checkbox':
-			f.checked = false;
-			break;
-		default:
-			throw 'Filter type ' + type + ' is not supported';
-	}
-};
-
-/**
- * @protected
- */
-picnet.ui.filter.GenericListFilter.prototype.initialiseControlCaches = function() {					
-    this.listItems = /** @type {!Array.<!Element>} */ (this.list.childNodes);
-};
 
 /**
  * @private
+ * @type {number}
  */
-picnet.ui.filter.GenericListFilter.prototype.loadFiltersFromCookie = function() {									
-  var filterState = this.options['enableCookies'] && goog.net.cookies.get(this.filterKey);
-  var states = /** @type{!Array.<picnet.ui.filter.FilterState>} */ ([]);
+pn.ui.filter.GenericListFilter.filteridx_ = 0;
+
+
+/** @param {!Element} list The list to reset. */
+pn.ui.filter.GenericListFilter.prototype.resetList = function(list) {
+  goog.dispose(this.list);
+  goog.array.forEach(this.listItems, goog.dispose);
+
+  this.list = list;
+  this.initialiseControlCaches();
+};
+
+
+/**
+ * @protected
+ * @return {string} The id of the given list.
+ */
+pn.ui.filter.GenericListFilter.prototype.getListId = function() {
+  return this.list.getAttribute('id') || this.list.getAttribute('name') || '';
+};
+
+
+/** @protected */
+pn.ui.filter.GenericListFilter.prototype.initialiseFilters = function() {
+  var listid = this.getListId();
+  this.filterKey_ = listid + '_' +
+      (++pn.ui.filter.GenericListFilter.filteridx_) + '_filters';
+  this.initialiseControlCaches();
+  this.registerListenersOnFilters_();
+  this.loadFiltersFromCookie_();
+};
+
+
+/** @private */
+pn.ui.filter.GenericListFilter.prototype.registerListenersOnFilters_ =
+    function() {
+  goog.array.forEach(this.filters, function(filter) {
+    this.eh_.listen(filter, filter.getAttribute('type') === 'text' ?
+        goog.events.EventType.KEYUP :
+        goog.events.EventType.CHANGE,
+        this.onFilterChanged_, false, this);
+  }, this);
+
+  if (this.options['clearFiltersControls']) {
+    for (var i = 0; i < this.options['clearFiltersControls'].length; i++) {
+      if (this.options['clearFiltersControls'][i].length) {
+        this.options['clearFiltersControls'][i] =
+            this.options['clearFiltersControls'][i][0];
+      }
+      this.eh_.listen(this.options['clearFiltersControls'][i],
+          goog.events.EventType.CLICK, this.clearAllFilters, false, this);
+    }
+  }
+
+  if (!this.options['additionalFilterTriggers']) return;
+
+  for (i = 0; i < this.options['additionalFilterTriggers'].length; i++) {
+    /** @type {!Element} */
+    var trigger = this.options['additionalFilterTriggers'][i];
+    if (trigger.length) { // Remove jQueryObject
+      trigger = this.options['additionalFilterTriggers'][i] = trigger[0];
+    }
+
+    var type = trigger.options ? 'select-one' : trigger.getAttribute('type');
+    var et = goog.events.EventType;
+    switch (type) {
+      case 'select-one':
+        this.eh_.listen(trigger, et.CHANGE, this.onFilterChanged_, false, this);
+        break;
+      case 'text':
+        trigger.setAttribute('title', this.options['filterToolTipMessage']);
+        this.eh_.listen(trigger, et.KEYUP, this.onFilterChanged_, false, this);
+        break;
+      case 'checkbox':
+        this.eh_.listen(trigger, et.CLICK, this.onFilterChanged_, false, this);
+        break;
+      default:
+        throw 'Filter type ' + type + ' is not supported';
+    }
+  }
+};
+
+
+/** Clears all filter values */
+pn.ui.filter.GenericListFilter.prototype.clearAllFilters = function() {
+  goog.array.forEach(this.filters, this.clearFilterValue, this);
+  if (this.options['additionalFilterTriggers']) {
+    goog.array.forEach(this.options['additionalFilterTriggers'],
+        this.clearFilterValue, this);
+  }
+  this.refresh();
+};
+
+
+/** @param {!Element} f The filter DOM element to clear. */
+pn.ui.filter.GenericListFilter.prototype.clearFilterValue = function(f) {
+  var type = f.options ? 'select-one' : f.getAttribute('type');
+  switch (type) {
+    case 'select-one':
+      f.selectedIndex = 0;
+      break;
+    case 'text':
+      f.value = '';
+      break;
+    case 'checkbox':
+      f.checked = false;
+      break;
+    default:
+      throw 'Filter type ' + type + ' is not supported';
+  }
+};
+
+
+/** @protected */
+pn.ui.filter.GenericListFilter.prototype.initialiseControlCaches = function() {
+  this.listItems = /** @type {!Array.<!Element>} */ (this.list.childNodes);
+};
+
+
+/** @private */
+pn.ui.filter.GenericListFilter.prototype.loadFiltersFromCookie_ = function() {
+  var filterState = this.options['enableCookies'] &&
+      goog.net.cookies.get(this.filterKey_);
+  var states = /** @type {!Array.<pn.ui.filter.FilterState>} */ ([]);
   if (filterState) {
     filterState = filterState.split('|');
     for (var i = 0; i < filterState.length; i++) {
-      var state = filterState[i].split(',');
-      states.push(new picnet.ui.filter.FilterState(state[0], state[3], parseInt(state[1], 10), state[2]));
+      var s = filterState[i].split(',');
+      var idx = parseInt(s[1], 10);
+      var fs = new pn.ui.filter.FilterState(s[0], s[3], idx, s[2]);
+      states.push(fs);
     }
   }
   var sharedCookieId = this.options['sharedCookieId'];
   if (sharedCookieId) {
-    var additionalFilterStates = this.options['enableCookies'] && goog.net.cookies.get(sharedCookieId);
-    if (!additionalFilterStates) {
-      return;
-    }
+    var additionalFilterStates = this.options['enableCookies'] &&
+        goog.net.cookies.get(sharedCookieId);
+    if (!additionalFilterStates) { return; }
     additionalFilterStates = additionalFilterStates.split('|');
-    var additionalStates = /** @type{!Array.<picnet.ui.filter.FilterState>} */ ([]);
+    var additionalStates = [];
     for (var i = 0; i < additionalFilterStates.length; i++) {
-      var additionalState = additionalFilterStates[i].split(',');
-      var stateHeaderTextOrAdditionalFilterId = additionalState[0];
-          
+      var state = additionalFilterStates[i].split(',');
+      var stateHeaderTextOrAdditionalFilterId = state[0];
+
       if (stateHeaderTextOrAdditionalFilterId.charAt(0) == '#') {
-        additionalStates.push(new picnet.ui.filter.FilterState(stateHeaderTextOrAdditionalFilterId.substr(1), additionalState[3], -1, additionalState[2]));
+        var fs = new pn.ui.filter.FilterState(
+            stateHeaderTextOrAdditionalFilterId.substr(1),
+            state[3],
+            -1,
+            state[2]
+            );
+        additionalStates.push(fs);
         continue;
       }
-      
-      for (var headerIndex = 0; headerIndex < this.headers.length; headerIndex++) {
-        var header = this.headers[headerIndex];
+
+      for (var hidx = 0; hidx < this.headers.length; hidx++) {
+        var header = this.headers[hidx];
         var visible = goog.style.isElementShown(header);
-        var headerText = header.getAttribute('filter') === 'false' || !visible ? null : goog.dom.getTextContent(header);
+        var headerText = header.getAttribute('filter') === 'false' || !visible ?
+            null : goog.dom.getTextContent(header);
 
         if (headerText && headerText == stateHeaderTextOrAdditionalFilterId) {
-          var filter = this.filters[this.filterColumnIndexes.indexOf(headerIndex)];
-          var filterId = filter.getAttribute('id');
-          additionalStates.push(new picnet.ui.filter.FilterState(filterId, additionalState[3], headerIndex, additionalState[2]));
+          var filter = this.filters[this.filterColumnIndexes.indexOf(hidx)];
+          var fid = filter.getAttribute('id');
+          var fs = new pn.ui.filter.FilterState(fid, state[3], hidx, state[2]);
+          additionalStates.push(fs);
           continue;
         }
       }
     }
 
-    
-    for(var k = 0; k < additionalStates.length; k++) {
-      var found = false;  
-      for(var j = 0; j < states.length; j++) {
+
+    for (var k = 0; k < additionalStates.length; k++) {
+      var found = false;
+      for (var j = 0; j < states.length; j++) {
         if (additionalStates[k].id == states[j].id) {
           states[j].value = additionalStates[k].value;
           found = true;
@@ -15535,90 +15682,98 @@ picnet.ui.filter.GenericListFilter.prototype.loadFiltersFromCookie = function() 
       }
     }
   }
-  this.applyFilterStates(states, true);
+  this.applyFilterStates_(states, true);
 };
 
-/**	 
- * @private
- * @param {!Event} e
- */
-picnet.ui.filter.GenericListFilter.prototype.onFilterChanged = function (e) {    
-    this.lastkeytime = new Date().getTime();
-    this.quickFindTimer();
+
+/** @private */
+pn.ui.filter.GenericListFilter.prototype.onFilterChanged_ = function() {
+  this.lastkeytime_ = new Date().getTime();
+  this.quickFindTimer_();
 };
 
-/**	 
- * @private	 
- */	
-picnet.ui.filter.GenericListFilter.prototype.quickFindTimer = function() {
-    if (this.lastTimerID) { clearTimeout(this.lastTimerID); this.lastTimerID = 0; }
-    this.cancelQuickFind = true;
 
-    var curtime = new Date().getTime();  
-    var delay = this.options['filterDelay'];        
-    if (curtime - this.lastkeytime >= delay) {
-        this.refresh();
-    } else {        
-        this.lastTimerID = goog.Timer.callOnce(function() { this.quickFindTimer.call(this); }, delay / 3, this);
-    }
+/** @private */
+pn.ui.filter.GenericListFilter.prototype.quickFindTimer_ = function() {
+  if (this.lastTimerID_) {
+    clearTimeout(this.lastTimerID_);
+    this.lastTimerID_ = 0;
+  }
+  this.cancelQuickFind_ = true;
+
+  var curtime = new Date().getTime();
+  var delay = this.options['filterDelay'];
+  if (curtime - this.lastkeytime_ >= delay) {
+    this.refresh();
+  } else {
+    this.lastTimerID_ = goog.Timer.callOnce(function() {
+      this.quickFindTimer_.call(this);
+    }, delay / 3, this);
+  }
 };
 
-/**	 
- */	
-picnet.ui.filter.GenericListFilter.prototype.refresh = function() {
-    this.cancelQuickFind = false;
-    clearTimeout(this.lastTimerID);
-    var filterStates = this.getFilterStates();			
-    this.applyFilterStates(filterStates, false);			
-    this.saveFiltersToCookie(filterStates);				
+
+/** Refreshes the filtering states, usefull in ajax contexts */
+pn.ui.filter.GenericListFilter.prototype.refresh = function() {
+  this.cancelQuickFind_ = false;
+  clearTimeout(this.lastTimerID_);
+  var filterStates = this.getFilterStates();
+  this.applyFilterStates_(filterStates, false);
+  this.saveFiltersToCookie_(filterStates);
 };
 
-/**	 
- * @protected
- * @return {!Array.<picnet.ui.filter.FilterState>}
- */	
-picnet.ui.filter.GenericListFilter.prototype.getFilterStates = function() {
-    var state = this.getFilterStateForFilter(this.filterInput);
-    return state ? [state] : [];
-};
 
 /**
  * @protected
- * @param {Element} filter
- * @return {picnet.ui.filter.FilterState}
+ * @return {!Array.<pn.ui.filter.FilterState>} The current filter states.
  */
-picnet.ui.filter.GenericListFilter.prototype.getFilterStateForFilter = function(filter) {			
-    var type = filter.options ? 'select-one' : filter.getAttribute('type');		
-    var value;		
-    switch (type) {
-        case 'text':
-            value = filter.value === null ? null : filter.value.toLowerCase();
-            break;
-        case 'select-one':
-            value = filter.selectedIndex === 0 ? null : filter.options[filter.selectedIndex].value;
-            break;
-        case 'checkbox':
-			      value = filter.checked;
-            break;
-        default:
-            throw 'Filter type ' + type + ' is not supported';
-    }
-    if (value === null || value.length <= 0) { return null; }    		
-	return new picnet.ui.filter.FilterState(filter.getAttribute('id'), value, 0, type);
+pn.ui.filter.GenericListFilter.prototype.getFilterStates = function() {
+  var state = this.getFilterStateForFilter(this.input_);
+  return state ? [state] : [];
 };
+
+
+/**
+ * @protected
+ * @param {Element} filter The filter whose state we require.
+ * @return {pn.ui.filter.FilterState} The filter state for the specified filter.
+ */
+pn.ui.filter.GenericListFilter.prototype.getFilterStateForFilter =
+    function(filter) {
+  var type = filter.options ? 'select-one' : filter.getAttribute('type');
+  var value;
+  switch (type) {
+    case 'text':
+      value = filter.value === null ? null : filter.value.toLowerCase();
+      break;
+    case 'select-one':
+      value = filter.selectedIndex === 0 ?
+          null : filter.options[filter.selectedIndex].value;
+      break;
+    case 'checkbox':
+      value = filter.checked;
+      break;
+    default:
+      throw 'Filter type ' + type + ' is not supported';
+  }
+  if (value === null || value.length <= 0) { return null; }
+  var id = filter.getAttribute('id');
+  return new pn.ui.filter.FilterState(id, value, 0, type);
+};
+
 
 /**
  * @private
- * @param {!Array.<picnet.ui.filter.FilterState>} filterStates
+ * @param {!Array.<pn.ui.filter.FilterState>} sts The states to save.
  */
-picnet.ui.filter.GenericListFilter.prototype.saveFiltersToCookie = function(filterStates) {			
+pn.ui.filter.GenericListFilter.prototype.saveFiltersToCookie_ = function(sts) {
   if (!this.options['enableCookies']) { return; }
   var filterStatesById = [];
   var filterStatesByHeaderText = [];
   var sharedCookieId = null;
-  for (var i = 0; i < filterStates.length; i++) {
-    var state = filterStates[i];
-    filterStatesById = this.addFilterStateToStringArray(filterStatesById, state);
+  for (var i = 0; i < sts.length; i++) {
+    var state = sts[i];
+    this.addFilterStateToStringArray_(filterStatesById, state);
 
     sharedCookieId = this.options['sharedCookieId'];
     if (sharedCookieId) {
@@ -15626,72 +15781,93 @@ picnet.ui.filter.GenericListFilter.prototype.saveFiltersToCookie = function(filt
       if (state.idx >= 0) {
         var header = this.headers[state.idx];
         var visible = goog.style.isElementShown(header);
-        headerText = header.getAttribute('filter') === 'false' || !visible ? null : goog.dom.getTextContent(header);
+        headerText = header.getAttribute('filter') === 'false' || !visible ?
+            null : goog.dom.getTextContent(header);
       } else {
         headerText = '#' + state.id;
       }
       if (headerText) {
-        var stateByHeaderText = new picnet.ui.filter.FilterState(headerText, state.value, state.idx, state.type);
-        filterStatesByHeaderText = this.addFilterStateToStringArray(filterStatesByHeaderText, stateByHeaderText);
+        var fs = new pn.ui.filter.FilterState(
+            headerText, state.value, state.idx, state.type);
+        filterStatesByHeaderText = this.addFilterStateToStringArray_(
+            filterStatesByHeaderText, fs);
       }
-    } 
-  }        
-  goog.net.cookies.set(this.filterKey, filterStatesById.join(''), 999999);
+    }
+  }
+  goog.net.cookies.set(this.filterKey_, filterStatesById.join(''), 999999);
   if (sharedCookieId) {
-    goog.net.cookies.set(sharedCookieId, filterStatesByHeaderText.join(''), 999999);
+    goog.net.cookies.set(sharedCookieId,
+        filterStatesByHeaderText.join(''), 999999);
   }
 };
 
-/**
- * @private
- * @param {!Array.<string>} cookieStringArray
- * @param {picnet.ui.filter.FilterState} filterState
- * @return {!Array.<string>}
- */
-picnet.ui.filter.GenericListFilter.prototype.addFilterStateToStringArray = function(cookieStringArray, filterState) {					
-  if (cookieStringArray.length > 0) cookieStringArray.push('|');
-  cookieStringArray.push(filterState.id);
-  cookieStringArray.push(',');
-  cookieStringArray.push(filterState.idx);
-  cookieStringArray.push(',');
-  cookieStringArray.push(filterState.type);
-  cookieStringArray.push(',');
-  cookieStringArray.push(filterState.value);
-  return cookieStringArray;
-};
 
 /**
  * @private
- * @param {!Array.<picnet.ui.filter.FilterState>} filterStates
- * @param {boolean} setValueOnFilter
+ * @param {!Array.<string>} arr The array to add the filter state
+ *    to (as a string).
+ * @param {pn.ui.filter.FilterState} state The filter state to convert to a
+ *    string and add to the array.
  */
-picnet.ui.filter.GenericListFilter.prototype.applyFilterStates = function(filterStates, setValueOnFilter) {					
-	if (this.options['filteringElements']) this.options['filteringElements'](filterStates);
-	this.applyFilterStatesImpl(filterStates, setValueOnFilter);
-	if (this.options['filteredElements']) this.options['filteredElements'](filterStates);
+pn.ui.filter.GenericListFilter.prototype.addFilterStateToStringArray_ =
+    function(arr, state) {
+  if (arr.length > 0) arr.push('|');
+  arr.push(state.id);
+  arr.push(',');
+  arr.push(state.idx);
+  arr.push(',');
+  arr.push(state.type);
+  arr.push(',');
+  arr.push(state.value);
 };
+
+
 /**
  * @private
- * @param {!Array.<picnet.ui.filter.FilterState>} filterStates
- * @param {boolean} setValueOnFilter
- */	
-picnet.ui.filter.GenericListFilter.prototype.applyFilterStatesImpl = function(filterStates, setValueOnFilter) {							
-    this.clearElementFilteredStates();
-    if ((!filterStates || filterStates.length) === 0 && this.options['matchingElement']) {
-        this.hideElementsThatDoNotMatchAnyFiltres();
-        return;
-    }								
-    if (filterStates === null || filterStates.length === 0) { this.applyStateToElements(null); }
-    else {
-      for (var i = 0; i < filterStates.length; i++) {
-        var state = filterStates[i];
-        if (setValueOnFilter && state.type && state.id) {
-          var filter = goog.dom.getElement(state.id);
-          if (!filter || filter.length === 0) {
-            continue;
-          }
+ * @param {!Array.<pn.ui.filter.FilterState>} filterStates The filterStates
+ *    to apply.
+ * @param {boolean} setValueOnFilter Wether we need to set the filter value
+ *    on the DOM control.  This is usefull when loading from cookies.
+ */
+pn.ui.filter.GenericListFilter.prototype.applyFilterStates_ =
+    function(filterStates, setValueOnFilter) {
+  if (this.options['filteringElements'])
+    this.options['filteringElements'](filterStates);
 
-          switch (state.type) {
+  this.applyFilterStatesImpl_(filterStates, setValueOnFilter);
+
+  if (this.options['filteredElements'])
+    this.options['filteredElements'](filterStates);
+};
+
+
+/**
+ * @private
+ * @param {!Array.<pn.ui.filter.FilterState>} filterStates The filterStates
+ *    to apply.
+ * @param {boolean} setValueOnFilter Wether we need to set the filter value
+ *    on the DOM control.  This is usefull when loading from cookies.
+ */
+pn.ui.filter.GenericListFilter.prototype.applyFilterStatesImpl_ =
+    function(filterStates, setValueOnFilter) {
+  this.clearElementFilteredStates_();
+  if ((!filterStates || filterStates.length) === 0 &&
+      this.options['matchingElement']) {
+    this.hideElementsThatDoNotMatchAnyFiltres_();
+    return;
+  }
+  if (filterStates === null || filterStates.length === 0) {
+    this.applyStateToElements_(null);
+  } else {
+    for (var i = 0; i < filterStates.length; i++) {
+      var state = filterStates[i];
+      if (setValueOnFilter && state.type && state.id) {
+        var filter = goog.dom.getElement(state.id);
+        if (!filter || filter.length === 0) {
+          continue;
+        }
+
+        switch (state.type) {
           case 'select-one':
             goog.array.forEach(filter.options, function(o, idx) {
               if (o.value === state.value) {
@@ -15708,228 +15884,236 @@ picnet.ui.filter.GenericListFilter.prototype.applyFilterStatesImpl = function(fi
             break;
           default:
             throw 'Filter type ' + state.type + ' is not supported';
-          }
         }
-        this.applyStateToElements(state);
       }
+      this.applyStateToElements_(state);
     }
+  }
 
-  this.hideElementsThatDoNotMatchAnyFiltres();			
+  this.hideElementsThatDoNotMatchAnyFiltres_();
 };
 
-/**
- * @private	 
- */
-picnet.ui.filter.GenericListFilter.prototype.clearElementFilteredStates = function() {
-    goog.array.forEach(this.listItems, function(r) { r.removeAttribute('filtermatch'); } );
+
+/** @private */
+pn.ui.filter.GenericListFilter.prototype.clearElementFilteredStates_ =
+    function() {
+  goog.array.forEach(this.listItems, function(r) {
+    r.removeAttribute('filtermatch');
+  });
 };
+
 
 /**
  * @private
- * @param {picnet.ui.filter.FilterState} filterState	 
+ * @param {pn.ui.filter.FilterState} filterState The filter state to apply.
  */
-picnet.ui.filter.GenericListFilter.prototype.applyStateToElements = function (filterState) {  
-  var normalisedTokens = this.getNormalisedSearchTokensForState(filterState);
-  // if (!normalisedTokens) { return; } // TODO: Validate this
-  
+pn.ui.filter.GenericListFilter.prototype.applyStateToElements_ =
+    function(filterState) {
+  var normalisedTokens = this.getNormalisedSearchTokensForState_(filterState);
+
   for (var i = 0; i < this.listItems.length; i++) {
-    if (this.cancelQuickFind) return;
+    if (this.cancelQuickFind_) return;
     var item = this.listItems[i];
     if (item.getAttribute('filtermatch')) { continue; }
-    if (!this.doesElementContainText(filterState, item, normalisedTokens)) { item.setAttribute('filtermatch', 'false'); }
+    if (!this.doesElementContainText(filterState, item, normalisedTokens)) {
+      item.setAttribute('filtermatch', 'false');
+    }
   }
 };
 
-/**
- * @private
- * @param {picnet.ui.filter.FilterState} state
- * @return {Array.<string>}
- */
-picnet.ui.filter.GenericListFilter.prototype.getNormalisedSearchTokensForState = function(state) {
-    if (state === null) { return null; }
-    switch (state.type) {
-        case 'select-one':
-            return [state.value];
-        case 'text':
-            return this.search.parseSearchTokens(state.value);
-        case 'checkbox':
-          return null;
-        default:
-            throw 'State type ' + state.type + ' is not supported';
-    }
-};
 
 /**
- * @private	 
+ * @private
+ * @param {pn.ui.filter.FilterState} state The filter to normalise.
+ * @return {Array.<string>} The normalised tokens for the filter state.
  */
-picnet.ui.filter.GenericListFilter.prototype.hideElementsThatDoNotMatchAnyFiltres =function() {
-    for (var i = 0; i < this.listItems.length; i++) {
-        if (this.cancelQuickFind) return;
-        var item = this.listItems[i];
-		var show = item.getAttribute('filtermatch') !== 'false';			
-		goog.style.showElement(item, show);            
-    }
+pn.ui.filter.GenericListFilter.prototype.getNormalisedSearchTokensForState_ =
+    function(state) {
+  if (state === null) { return null; }
+  switch (state.type) {
+    case 'select-one':
+      return [state.value];
+    case 'text':
+      return this.search_.parseSearchTokens(state.value);
+    case 'checkbox':
+      return null;
+    default:
+      throw 'State type ' + state.type + ' is not supported';
+  }
 };
+
+
+/** @private */
+pn.ui.filter.GenericListFilter.prototype.hideElementsThatDoNotMatchAnyFiltres_ =
+    function() {
+  for (var i = 0; i < this.listItems.length; i++) {
+    if (this.cancelQuickFind_) return;
+    var item = this.listItems[i];
+    var show = item.getAttribute('filtermatch') !== 'false';
+    goog.style.showElement(item, show);
+  }
+};
+
 
 /**
  * @protected
- * @param {picnet.ui.filter.FilterState} state
- * @param {!Element} item
- * @param {Array.<string>} textTokens
- * @param {string=} optText
- * @return {boolean}
+ * @param {pn.ui.filter.FilterState} state The filter state to check for
+ *    a match.
+ * @param {!Element} item The DOM element for the filter.
+ * @param {Array.<string>} textTokens The filter text tokens.
+ * @param {string=} opt_txt The text to match against.
+ * @return {boolean} Wether the filter matches the specified text.
  */
-picnet.ui.filter.GenericListFilter.prototype.doesElementContainText = function (state, item, textTokens, optText) {  
+pn.ui.filter.GenericListFilter.prototype.doesElementContainText =
+    function(state, item, textTokens, opt_txt) {
   var exact = goog.isDefAndNotNull(state) && state.type === 'select-one';
-  var matches = optText ?
-    this.doesTextContainTextImpl(optText, textTokens, exact) :
-    this.doesTextContainText(item, textTokens, exact);  
-  return matches && this.checkMatchingElementCallback(state, item, textTokens);
-};
-				
-	
-/**
- * @private	 
- * @param {picnet.ui.filter.FilterState} state
- * @param {!Element} item
- * @param {Array.<string>} textTokens	 
- * @return {boolean}
- */
-picnet.ui.filter.GenericListFilter.prototype.checkMatchingElementCallback = function(state, item, textTokens) {
-    if (!this.options['matchingElement']) return true;				
-	var object = item;
-	if (window['jQuery']) object = window['jQuery'](item);
-    return this.options['matchingElement'](state, object, textTokens);
+  var matches = opt_txt ?
+      this.doesTextContainTextImpl(opt_txt, textTokens, exact) :
+      this.doesTextContainText(item, textTokens, exact);
+  return matches && this.checkMatchingElementCallback_(state, item, textTokens);
 };
 
-/**
- * @protected	  
- * @param {!Element} item
- * @param {Array.<string>} textTokens	 
- * @param {boolean} exact
- * @return {boolean}
- */
-picnet.ui.filter.GenericListFilter.prototype.doesTextContainText = function(item, textTokens, exact) {
-  return this.doesTextContainTextImpl(goog.string.trim(goog.dom.getTextContent(item)), textTokens, exact); 
-};
 
 /**
- * @protected	 
- * @param {string} text
- * @param {Array.<string>} textTokens	 
- * @param {boolean} exact
- * @return {boolean}
+ * @private
+ * @param {pn.ui.filter.FilterState} state The filter state to check for
+ *    a match.
+ * @param {!Element} item The DOM element for the filter.
+ * @param {Array.<string>} textTokens The filter text tokens.
+ * @return {boolean} Wether the filter matches the specified text.
  */
-picnet.ui.filter.GenericListFilter.prototype.doesTextContainTextImpl = function (text, textTokens, exact) {
-  return this.search.doesTextMatchTokens(text, textTokens, exact); 
+pn.ui.filter.GenericListFilter.prototype.checkMatchingElementCallback_ =
+    function(state, item, textTokens) {
+  if (!this.options['matchingElement']) return true;
+  var object = item;
+  if (window['jQuery']) object = window['jQuery'](item);
+  return this.options['matchingElement'](state, object, textTokens);
 };
+
+
+/**
+ * @protected
+ * @param {!Element} item The DOM element for the filter.
+ * @param {Array.<string>} textTokens The filter text tokens.
+ * @param {boolean} exact Wether an exact match is required.
+ * @return {boolean} Wether the filter matches the specified text.
+ */
+pn.ui.filter.GenericListFilter.prototype.doesTextContainText =
+    function(item, textTokens, exact) {
+  var trimmed = goog.string.trim(goog.dom.getTextContent(item));
+  return this.doesTextContainTextImpl(trimmed, textTokens, exact);
+};
+
+
+/**
+ * @protected
+ * @param {string} text The filter expression text.
+ * @param {Array.<string>} textTokens The filter text tokens.
+ * @param {boolean} exact Wether an exact match is required.
+ * @return {boolean} Wether the filter matches the specified text.
+ */
+pn.ui.filter.GenericListFilter.prototype.doesTextContainTextImpl =
+    function(text, textTokens, exact) {
+  return this.search_.doesTextMatchTokens(text, textTokens, exact);
+};
+
 
 /** @inheritDoc */
-picnet.ui.filter.GenericListFilter.prototype.disposeInternal = function() {
-    picnet.ui.filter.GenericListFilter.superClass_.disposeInternal.call(this);
+pn.ui.filter.GenericListFilter.prototype.disposeInternal = function() {
+  pn.ui.filter.GenericListFilter.superClass_.disposeInternal.call(this);
 
-	goog.dispose(this.options);
-	goog.dispose(this.eventHandler);
-	goog.dispose(this.search);
+  goog.dispose(this.list);
+  goog.dispose(this.options);
+  goog.dispose(this.input_);
+  goog.array.forEach(this.listItems, goog.dispose);
+  goog.array.forEach(this.filters, goog.dispose);
+  goog.dispose(this.eh_);
+  goog.dispose(this.search_);
 
-	delete this.list;	
-	delete this.filterInput;
-	delete this.listItems;
-	delete this.filters;	
+  delete this.list;
+  delete this.options;
+  delete this.input_;
+  delete this.listItems;
+  delete this.filters;
+  delete this.eh_;
+  delete this.search_;
 };
-goog.require('picnet.ui.filter.FilterState');
-goog.require('picnet.ui.filter.GenericListFilterOptions');
 
-goog.provide('picnet.ui.filter.TableFilterOptions');
-
-/**
- * @export
- * @extends {picnet.ui.filter.GenericListFilterOptions}
- * @constructor
- */
-picnet.ui.filter.TableFilterOptions = function () {
-    picnet.ui.filter.GenericListFilterOptions.call(this);
-};
-goog.inherits(picnet.ui.filter.TableFilterOptions, picnet.ui.filter.GenericListFilterOptions);
-
-
-/**
- * @export
- * @type {string}
- */
-picnet.ui.filter.TableFilterOptions.prototype.selectOptionLabel = 'Select...';
-/**
- * @export
- * @type {Element}
- */
-picnet.ui.filter.TableFilterOptions.prototype.frozenHeaderTable = null;  
 goog.require('goog.array');
-goog.require('goog.string');
-goog.require('goog.dom.classes');
 goog.require('goog.dom');
+goog.require('goog.dom.classes');
+goog.require('goog.string');
 goog.require('goog.style');
+goog.require('pn.ui.filter.GenericListFilter');
+goog.require('pn.ui.filter.TableFilterOptions');
 
-goog.require('picnet.ui.filter.TableFilterOptions');
-goog.require('picnet.ui.filter.GenericListFilter');
-goog.require('picnet.ui.filter.ArrayExtension');
+goog.provide('pn.ui.filter.TableFilter');
 
-goog.provide('picnet.ui.filter.TableFilter');
 
-/** 
+
+/**
  * @constructor
- * @extends {picnet.ui.filter.GenericListFilter}
+ * @extends {pn.ui.filter.GenericListFilter}
  * @export
- * 
- * @param {!Element} grid
- * @param {!picnet.ui.filter.TableFilterOptions} options
+ *
+ * @param {!HtmlTableElement} grid The HtmlTable element to add the PicNet
+ *    table filter to.
+ * @param {!pn.ui.filter.TableFilterOptions} opts The options for filtering.
+ *    Since this options has to work outside of the closure environment all
+ *    field names should be accessed as strings.
  */
-picnet.ui.filter.TableFilter = function(grid, options) {    
-	// Backwards compatibility
-	if (options['matchingRow']) options['matchingElement'] = options['matchingRow'];
-	if (options['filteringRows']) options['filteringElements'] = options['filteringRows'];
-	if (options['filteredRows']) options['filteredElements'] = options['filteredRows'];
-    picnet.ui.filter.GenericListFilter.call(this, null, grid, options);
+pn.ui.filter.TableFilter = function(grid, opts) {
+  // Backwards compatibility
+  if (opts['matchingRow']) opts['matchingElement'] = opts['matchingRow'];
+  if (opts['filteringRows']) opts['filteringElements'] = opts['filteringRows'];
+  if (opts['filteredRows']) opts['filteredElements'] = opts['filteredRows'];
 
-	/** 
-     * @private
-	 * @type {!Array.<number>}
-	 */
-	this.filterColumnIndexes;
-	/** 
-     * @private
-	 * @type {!Array.<!Element>}
-	 */
-    this.headers;
-	/** 
-     * @private
-	 * @type {!Element}
-	 */
-    this.thead;
-	/** 
-     * @private
-	 * @type {!Element}
-	 */
-    this.tbody;		    	
+  pn.ui.filter.GenericListFilter.call(this, null, grid, opts);
+
+  /**
+   * @private
+   * @type {!Array.<number>}
+   */
+  this.filterColumnIndexes_ = [];
+
+  /**
+   * @private
+   * @type {!Array.<!Element>}
+   */
+  this.headers_ = [];
+
+  /**
+   * @private
+   * @type {Element}
+   */
+  this.thead_ = null;
+
+  /**
+   * @private
+   * @type {Element}
+   */
+  this.tbody_ = null;
 };
-goog.inherits(picnet.ui.filter.TableFilter, picnet.ui.filter.GenericListFilter);
+goog.inherits(pn.ui.filter.TableFilter, pn.ui.filter.GenericListFilter);
 
 
-/** 
+/**
 * @private
 * @type {number}
 */
-picnet.ui.filter.TableFilter.grididx = 0;
+pn.ui.filter.TableFilter.grididx_ = 0;
 
 
-/**
- * @inheritDoc
- */
-picnet.ui.filter.TableFilter.prototype.initialiseFilters = function() {
-  this.tbody = goog.dom.getElementsByTagNameAndClass('tbody', null, this.list)[0];
-  this.thead = goog.dom.getElementsByTagNameAndClass('thead', null, this.options['frozenHeaderTable'] || this.list)[0];
-  
-  if (!this.thead) {
-    var trTableRow = goog.dom.getElementsByTagNameAndClass('tr', null, this.tbody)[0];
+/** @inheritDoc */
+pn.ui.filter.TableFilter.prototype.initialiseFilters = function() {
+  this.tbody_ = goog.dom.getElementsByTagNameAndClass(
+      'tbody', null, this.list)[0];
+  this.thead_ = goog.dom.getElementsByTagNameAndClass(
+      'thead', null, this.options['frozenHeaderTable'] || this.list)[0];
+
+  if (!this.thead_) {
+    var trTableRow = goog.dom.getElementsByTagNameAndClass(
+        'tr', null, this.tbody_)[0];
     var tdCells = goog.dom.getElementsByTagNameAndClass('td', null, trTableRow);
     var thead = goog.dom.createDom('thead', null);
     goog.dom.insertChildAt(this.list, thead, 0);
@@ -15940,73 +16124,81 @@ picnet.ui.filter.TableFilter.prototype.initialiseFilters = function() {
       th.innerHTML = 'col' + i;
       goog.dom.appendChild(tr, th);
     }
-    
-    this.thead = thead;
+
+    this.thead_ = thead;
   }
-  picnet.ui.filter.TableFilter.superClass_.initialiseFilters.call(this);
+  pn.ui.filter.TableFilter.superClass_.initialiseFilters.call(this);
 };
 
-/**
- * @inheritDoc
- */
-picnet.ui.filter.TableFilter.prototype.initialiseControlCaches = function () {
-    var headerRows = /** @type {!Array.<!Element>} */(goog.dom.getElementsByTagNameAndClass('tr', null, this.thead));
-    var filterRow = /** @type {!Array.<!Element>} */(goog.dom.getElementsByTagNameAndClass('tr', 'filters', this.thead));
-    if (headerRows.length > 1 && filterRow.length > 0) {
-      this.headers = /** @type {!Array.<!Element>} */(goog.dom.getElementsByTagNameAndClass('th', null, headerRows[headerRows.length-2]));
-    } else if (headerRows.length > 0) {
-      this.headers = /** @type {!Array.<!Element>} */(goog.dom.getElementsByTagNameAndClass('th', null, headerRows[headerRows.length-1]));
-    } 
-    
-    this.listItems = /** @type {!Array.<!Element>} */(goog.dom.getElementsByTagNameAndClass('tr', null, this.tbody));
-    this.buildFiltersRow();
-    var tHeadFilters = goog.dom.getElementsByTagNameAndClass('tr', 'filters', this.thead)[0];
-    this.filters = /** @type {!Array.<!Element>} */(goog.array.concat(
-		goog.array.map(goog.dom.getElementsByTagNameAndClass('input', null, tHeadFilters), function (ctl) { return ctl; }),
-		goog.array.map(goog.dom.getElementsByTagNameAndClass('select', null, tHeadFilters), function (ctl) { return ctl; })
-	));
-  this.filterColumnIndexes = goog.array.map(this.filters, this.getColumnIndexOfFilter, this);
+
+/** @inheritDoc */
+pn.ui.filter.TableFilter.prototype.initialiseControlCaches = function() {
+  var headerRows = /** @type {!Array.<!Element>} */(
+      goog.dom.getElementsByTagNameAndClass('tr', null, this.thead_));
+  var filterRow = /** @type {!Array.<!Element>} */(
+      goog.dom.getElementsByTagNameAndClass('tr', 'filters', this.thead_));
+  if (headerRows.length > 1 && filterRow.length > 0) {
+    this.headers_ = /** @type {!Array.<!Element>} */(
+        goog.dom.getElementsByTagNameAndClass(
+            'th', null, headerRows[headerRows.length - 2]));
+  } else if (headerRows.length > 0) {
+    this.headers_ = /** @type {!Array.<!Element>} */(
+        goog.dom.getElementsByTagNameAndClass(
+            'th', null, headerRows[headerRows.length - 1]));
+  }
+
+  this.listItems = /** @type {!Array.<!Element>} */(
+      goog.dom.getElementsByTagNameAndClass('tr', null, this.tbody_));
+
+  this.buildFiltersRow_();
+
+  var tHeadFilters = goog.dom.getElementsByTagNameAndClass(
+      'tr', 'filters', this.thead_)[0];
+  this.filters = /** @type {!Array.<!Element>} */(goog.array.concat(
+      goog.array.map(goog.dom.getElementsByTagNameAndClass(
+      'input', null, tHeadFilters), function(ctl) { return ctl; }),
+      goog.array.map(goog.dom.getElementsByTagNameAndClass(
+      'select', null, tHeadFilters), function(ctl) { return ctl; })
+      ));
+  this.filterColumnIndexes_ = goog.array.map(
+      this.filters, this.getColumnIndexOfFilter_, this);
 };
-	
-	
-/**	 
- * @private
- * @param {!Element} f
- * @return {number}
- */	
-picnet.ui.filter.TableFilter.prototype.getColumnIndexOfFilter = function(f) {
-	var td = goog.dom.getAncestorByTagNameAndClass(f, goog.dom.TagName.TD);
-	var tr = goog.dom.getAncestorByTagNameAndClass(td, goog.dom.TagName.TR);
-	var cells = /** @type {!Array.<!Element>} */ (tr.getElementsByTagName('td'));		
-	return goog.array.indexOf(cells, td);
-};
-	
-/**
- * @private
- * @return {!Element}
- */
-picnet.ui.filter.TableFilter.prototype.getFilterTable = function() { return (this.options['frozenHeaderTable'] || this.list); };
+
 
 /**
  * @private
+ * @param {!Element} f The filter whose index in the table we are after.
+ * @return {number} The index of the given filter in the parent row.
  */
-picnet.ui.filter.TableFilter.prototype.buildFiltersRow = function() {
-  var filterRow = goog.dom.getElementsByTagNameAndClass('tr', 'filters', this.thead);
+pn.ui.filter.TableFilter.prototype.getColumnIndexOfFilter_ = function(f) {
+  var td = goog.dom.getAncestorByTagNameAndClass(f, goog.dom.TagName.TD);
+  if (!td || td.length <= 0) { return -1; }  
+  var tr = goog.dom.getAncestorByTagNameAndClass(td, goog.dom.TagName.TR);
+  var cells = /** @type {!Array.<!Element>} */ (tr.getElementsByTagName('td'));
+  return goog.array.indexOf(cells, td);
+};
+
+
+/** @private */
+pn.ui.filter.TableFilter.prototype.buildFiltersRow_ = function() {
+  var filterRow = goog.dom.getElementsByTagNameAndClass(
+      'tr', 'filters', this.thead_);
   if (filterRow.length > 0) return;
   var tr = goog.dom.createDom('tr', { 'class': 'filters' });
-  for (var i = 0; i < this.headers.length; i++) {
-    var header = this.headers[i];
+  for (var i = 0; i < this.headers_.length; i++) {
+    var header = this.headers_[i];
     var visible = goog.style.isElementShown(header);
     if (!visible) {
       continue;
     }
 
-    var headerText = header.getAttribute('filter') === 'false' || !visible ? '' : goog.dom.getTextContent(header);
+    var headerText = header.getAttribute('filter') === 'false' || !visible ?
+        '' : goog.dom.getTextContent(header);
     var filterClass = header.getAttribute('filter-class');
-    /** @type Element */
+    /** @type {Element} */
     var td;
     if (headerText && headerText.length > 0) {
-      var filter = this.getFilterDom(i, header);
+      var filter = this.getFilterDom_(i, header);
       goog.style.setStyle(filter, 'width', '95%');
       td = goog.dom.createDom('td', null, filter);
     } else {
@@ -16018,190 +16210,195 @@ picnet.ui.filter.TableFilter.prototype.buildFiltersRow = function() {
     }
     goog.dom.appendChild(tr, td);
   }
-  goog.dom.appendChild(this.thead, tr);
+  goog.dom.appendChild(this.thead_, tr);
 };
+
 
 /**
  * @private
- * @param {number} colIdx
- * @param {!Element} header
- * @return {!Element}
+ * @param {number} colIdx The column index for this filter.
+ * @param {!Element} header The TH element to attach this filter to.
+ * @return {!Element} The filter DOM element.
  */
-picnet.ui.filter.TableFilter.prototype.getFilterDom = function(colIdx, header) {
-    var filterType = header.getAttribute('filter-type') || 'text';
-    switch (filterType) {
-        case 'text': return goog.dom.createDom('input', {'type':'text','id': this.getListId() + '_filter_' + colIdx,'class':'filter','title':this.options['filterToolTipMessage']});
-        case 'ddl': return this.getSelectFilter(colIdx, header);
-        default: throw 'filter-type: ' + filterType + ' is not supported';
-    }
+pn.ui.filter.TableFilter.prototype.getFilterDom_ = function(colIdx, header) {
+  var filterType = header.getAttribute('filter-type') || 'text';
+  switch (filterType) {
+    case 'text': return goog.dom.createDom('input', {
+      'type': 'text',
+      'id': this.getListId() + '_filter_' + colIdx,
+      'class': 'filter',
+      'title': this.options['filterToolTipMessage']
+    });
+    case 'ddl': return this.getSelectFilter_(colIdx);
+    default: throw 'filter-type: ' + filterType + ' is not supported';
+  }
 };
+
 
 /**
  * @private
- * @param {number} colIdx
- * @param {!Element} header
- * @return {!Element}
+ * @param {number} colIdx The column index to create a SELECT filter for.
+ * @return {!Element} The created SELECT DOM element.
  */
-picnet.ui.filter.TableFilter.prototype.getSelectFilter = function(colIdx, header) {
-    var select = goog.dom.createDom('select', {'id': this.getListId() + '_filter_' + colIdx,'class':'filter'}, goog.dom.createDom('option', {}, this.options['selectOptionLabel']));
-    var cells = goog.array.map(this.listItems, function(r) {
-		return r.cells[colIdx];
-	});		
-    var values = [];
-	goog.array.forEach(cells, function(td) {			
-		var txt = goog.string.trim(goog.dom.getTextContent(td));
-        if (!txt || txt === '&nbsp;' || goog.array.indexOf(values, txt) >= 0) { return; }						
-        values.push(txt);
-	});
-    values.sort();
-			
-	goog.array.forEach(values, function(txt) {
-		goog.dom.appendChild(select, goog.dom.createDom('option', {'value':txt.replace('"','&#034;')}, txt));            
-	});
-		
-    return select;
-};
-
-/**	 
- * @inheritDoc
- */	
-picnet.ui.filter.TableFilter.prototype.getFilterStates = function() {
-    var filterStates = [];
-
-    for (var i = 0; i < this.filters.length; i++) {
-        var state = this.getFilterStateForFilter(this.filters[i]);
-        if (state) { filterStates.push(state); }
+pn.ui.filter.TableFilter.prototype.getSelectFilter_ = function(colIdx) {
+  var select = goog.dom.createDom('select', {
+    'id': this.getListId() + '_filter_' + colIdx,
+    'class': 'filter'
+  }, goog.dom.createDom('option', {}, this.options['selectOptionLabel']));
+  var cells = goog.array.map(this.listItems, function(r) {
+    return r.cells[colIdx];
+  });
+  var values = [];
+  goog.array.forEach(cells, function(td) {
+    var txt = goog.string.trim(goog.dom.getTextContent(td));
+    if (!txt || txt === '&nbsp;' || goog.array.indexOf(values, txt) >= 0) {
+      return;
     }
+    values.push(txt);
+  });
+  values.sort();
 
-    if (!this.options['additionalFilterTriggers']) return filterStates;
+  goog.array.forEach(values, function(txt) {
+    goog.dom.appendChild(select, goog.dom.createDom('option', {
+      'value': txt.replace('"', '&#034;')
+    }, txt));
+  });
 
-    for (i = 0; i < this.options['additionalFilterTriggers'].length; i++) {
-        state = this.getFilterStateForFilter(this.options['additionalFilterTriggers'][i]);			
-        if (state) filterStates.push(state);
-    }
-    return filterStates;
-};
-
-/**
- * @inheritDoc
- */
-picnet.ui.filter.TableFilter.prototype.getFilterStateForFilter = function(filter) {		
-    var state = picnet.ui.filter.TableFilter.superClass_.getFilterStateForFilter.call(this, filter);    
-    if (state) {
-        state.idx = this.getColumnIndexOfCurrentFilter(filter);
-    }    	
-	return state;
+  return select;
 };
 
 
-/**
- * @private	 
- * @param {Element} filter
- * @return {number}
- */
-picnet.ui.filter.TableFilter.prototype.getColumnIndexOfCurrentFilter = function(filter) {        
-	var filterCell = goog.dom.getAncestorByTagNameAndClass(filter, goog.dom.TagName.TD);
-    if (!filterCell || filterCell.length <= 0) { return -1; }        
-	var filterRow = goog.dom.getAncestorByTagNameAndClass(filterCell, goog.dom.TagName.TR);
-    return goog.array.indexOf(filterRow.cells, filterCell);
+/** @inheritDoc */
+pn.ui.filter.TableFilter.prototype.getFilterStates = function() {
+  var filterStates = [];
+
+  for (var i = 0; i < this.filters.length; i++) {
+    var state = this.getFilterStateForFilter(this.filters[i]);
+    if (state) { filterStates.push(state); }
+  }
+
+  if (!this.options['additionalFilterTriggers']) return filterStates;
+
+  for (i = 0; i < this.options['additionalFilterTriggers'].length; i++) {
+    state = this.getFilterStateForFilter(
+        this.options['additionalFilterTriggers'][i]);
+    if (state) filterStates.push(state);
+  }
+  return filterStates;
 };
 
-/**
- * @inheritDoc
- */
-picnet.ui.filter.TableFilter.prototype.doesElementContainText = function (state, tr, textTokens) {
+
+/** @inheritDoc */
+pn.ui.filter.TableFilter.prototype.getFilterStateForFilter = function(filter) {
+  var state = pn.ui.filter.TableFilter.superClass_.
+      getFilterStateForFilter.call(this, filter);
+  if (state) { state.idx = this.getColumnIndexOfFilter_(filter); }
+  return state;
+};
+
+
+/** @inheritDoc */
+pn.ui.filter.TableFilter.prototype.doesElementContainText =
+    function(state, tr, textTokens) {
   var cells = tr.getElementsByTagName('td');
   var columnIdx = state === null ? -1 : state.idx;
   if (columnIdx < 0) {
     var txt = [];
     for (var i = 0; i < cells.length; i++) {
-      var header = this.headers[i];
+      var header = this.headers_[i];
       var visible = goog.style.isElementShown(header);
       if (!visible || header.getAttribute('filter') === 'false') { continue; }
       txt.push(goog.string.trim(goog.dom.getTextContent(cells[i])));
     }
-    return picnet.ui.filter.TableFilter.superClass_.doesElementContainText.call(this, state, tr, textTokens, txt.join('\t'));
+    return pn.ui.filter.TableFilter.superClass_.doesElementContainText.
+        call(this, state, tr, textTokens, txt.join('\t'));
   }
   else {
-    return picnet.ui.filter.TableFilter.superClass_.doesElementContainText.call(this, state, cells[columnIdx], textTokens);
+    return pn.ui.filter.TableFilter.superClass_.doesElementContainText.
+        call(this, state, cells[columnIdx], textTokens);
   }
 
 };
 
+
 /** @inheritDoc */
-picnet.ui.filter.TableFilter.prototype.disposeInternal = function() {
-    picnet.ui.filter.TableFilter.superClass_.disposeInternal.call(this);
+pn.ui.filter.TableFilter.prototype.disposeInternal = function() {
+  pn.ui.filter.TableFilter.superClass_.disposeInternal.call(this);
 
-	delete this.filterColumnIndexes;	
-    delete this.headers;	
-    delete this.thead;
-	delete this.tbody
+  goog.dispose(this.thead_);
+  goog.dispose(this.tbody_);
+  goog.array.forEach(this.headers_, goog.dispose);
+
+  delete this.filterColumnIndexes_;
+  delete this.headers_;
+  delete this.thead_;
+  delete this.tbody_;
 };
+
 goog.require('goog.array');
+goog.require('pn.ui.filter.TableFilter');
+goog.require('pn.ui.filter.TableFilterOptions');
 
-goog.require('picnet.ui.filter.TableFilterOptions');
-goog.require('picnet.ui.filter.TableFilter');
-
-goog.provide('picnet.ui.filter.jQueryPlugin');
+goog.provide('pn.ui.filter.jQueryPlugin');
 
 // This is the only public method.  Initialised like:
 // $(#tableid).tableFilter(options)
 var jq = window['jQuery'];
 if (jq) {
-    (function (jq) {
-        /** @constructor */
-        jq.tableFilter = function (element, opts) {
-            var tf;
-            var plugin = this;
-            plugin.init = function () {
-                var tfo = new picnet.ui.filter.TableFilterOptions();
-                var options = jq['extend']({}, tfo, opts);
-                tf = new picnet.ui.filter.TableFilter(element, options);
-            };
+  (function(jq) {
+    /** @constructor */
+    jq.tableFilter = function(element, opts) {
+      var tf;
+      var plugin = this;
+      plugin.init = function() {
+        var tfo = new pn.ui.filter.TableFilterOptions();
+        var options = jq['extend']({}, tfo, opts);
+        tf = new pn.ui.filter.TableFilter(element, options);
+      };
 
-            plugin.refresh = function () {
-                picnet.ui.filter.TableFilter.superClass_.refresh.call(tf);
-            };
+      plugin.refresh = function() {
+        pn.ui.filter.TableFilter.superClass_.refresh.call(tf);
+      };
 
-             plugin.reset = function (list) {
-                picnet.ui.filter.TableFilter.superClass_.resetList.call(tf, list);
-            };
-            plugin.init();
+      plugin.reset = function(list) {
+        pn.ui.filter.TableFilter.superClass_.resetList.call(tf, list);
+      };
+      plugin.init();
 
-        };
+    };
 
-        jq['fn']['tableFilter'] = function (options) {
-            var tmp = goog.array.forEach(this, function (t) {
-                if (undefined === jq(t).data('tableFilter') ||
-	                jq(t).data('tableFilter') === null) {
+    jq['fn']['tableFilter'] = function(options) {
+      var tmp = goog.array.forEach(this, function(t) {
+        if (undefined === jq(t).data('tableFilter') ||
+                  jq(t).data('tableFilter') === null) {
                     var plugin = new jq.tableFilter(t, options);
                     jq(t).data('tableFilter', plugin);
-                }
-            });
-            return tmp;
-        };
+        }
+      });
+      return tmp;
+    };
 
-        jq['fn']['tableFilterApplyFilterValues'] = function (options) {
-            var tmp = goog.array.forEach(this, function (t) {
-                if (undefined !== jq(t).data('tableFilter') &&
-	                 jq(t).data('tableFilter') !== null) {
+    jq['fn']['tableFilterApplyFilterValues'] = function(options) {
+      var tmp = goog.array.forEach(this, function(t) {
+        if (undefined !== jq(t).data('tableFilter') &&
+            jq(t).data('tableFilter') !== null) {
                     var plugin = jq(t).data('tableFilter');
                     plugin.refresh();
-                }
-            });
-            return tmp;
-        };
-      
-       jq['fn']['tableFilterRefresh'] = function (options) {
-            var tmp = goog.array.forEach(this, function (t) {
-                if (undefined !== jq(t).data('tableFilter') &&
-	                 jq(t).data('tableFilter') !== null) {
+        }
+      });
+      return tmp;
+    };
+
+    jq['fn']['tableFilterRefresh'] = function(options) {
+      var tmp = goog.array.forEach(this, function(t) {
+        if (undefined !== jq(t).data('tableFilter') &&
+            jq(t).data('tableFilter') !== null) {
                     var plugin = jq(t).data('tableFilter');
                     plugin.reset(t);
-                }
-            });
-            return tmp;
-        };
+        }
+      });
+      return tmp;
+    };
 
-    })(jq);
-};
+  })(jq);
+}

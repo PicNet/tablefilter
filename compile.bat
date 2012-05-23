@@ -8,8 +8,8 @@ set CLOSURE_COMPILER=U:\shared\lib\compiler.jar
   --output_file=src/deps.js && ^
 %PYTHON27_EXEC% ^
   %CLOSURE_LIBRARY%closure\bin\build\closurebuilder.py ^
-  --namespace="picnet.ui.filter.TableFilter" ^
-  --namespace="picnet.ui.filter.jQueryPlugin" ^
+  --namespace="pn.ui.filter.TableFilter" ^
+  --namespace="pn.ui.filter.jQueryPlugin" ^
   --root=%CLOSURE_LIBRARY% ^
   --root=src\ ^
   --output_mode=compiled ^
@@ -35,8 +35,8 @@ set CLOSURE_COMPILER=U:\shared\lib\compiler.jar
   --output_file=picnet.table.filter.min.js && ^
 %PYTHON27_EXEC% ^
 	%CLOSURE_LIBRARY%closure\bin\build\closurebuilder.py ^
-	--namespace="picnet.ui.filter.TableFilter" ^
-  	--namespace="picnet.ui.filter.jQueryPlugin" ^
+	--namespace="pn.ui.filter.TableFilter" ^
+  	--namespace="pn.ui.filter.jQueryPlugin" ^
 	--root=%CLOSURE_LIBRARY% ^
   	--root=src\ ^
   	--output_mode=script ^

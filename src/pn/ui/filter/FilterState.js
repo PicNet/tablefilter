@@ -1,4 +1,4 @@
-﻿;
+;
 goog.provide('pn.ui.filter.FilterState');
 
 
