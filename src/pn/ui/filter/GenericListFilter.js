@@ -539,7 +539,7 @@ pn.ui.filter.GenericListFilter.prototype.getNormalisedSearchTokensForState_ =
   if (state === null) { return null; }
   switch (state.type) {
     case 'select-one':
-      return [state.value];
+      return [goog.string.unescapeEntities(state.value)];
     case 'text':
       return this.search_.parseSearchTokens(state.value);
     case 'checkbox':
