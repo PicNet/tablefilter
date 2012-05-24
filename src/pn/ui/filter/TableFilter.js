@@ -143,7 +143,9 @@ pn.ui.filter.TableFilter.prototype.getColumnIndexOfFilter_ = function(f) {
 pn.ui.filter.TableFilter.prototype.buildFiltersRow_ = function() {
   var filterRow = goog.dom.getElementsByTagNameAndClass(
       'tr', 'filters', this.thead_);
-  if (filterRow.length > 0) return;
+  if (filterRow.length > 0) {
+    goog.dom.removeNode(filterRow[0]); 
+  }
   var tr = goog.dom.createDom('tr', { 'class': 'filters' });
   for (var i = 0; i < this.headers_.length; i++) {
     var header = this.headers_[i];

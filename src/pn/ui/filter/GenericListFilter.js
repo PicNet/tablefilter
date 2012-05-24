@@ -112,6 +112,8 @@ pn.ui.filter.GenericListFilter.prototype.resetList = function(list) {
 
   this.list = list;
   this.initialiseControlCaches();
+  this.registerListenersOnFilters_();
+  this.loadFiltersFromCookie_();
 };
 
 
