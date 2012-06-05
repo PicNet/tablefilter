@@ -375,8 +375,8 @@ pn.ui.filter.GenericListFilter.prototype.getFilterStateForFilter =
  */
 pn.ui.filter.GenericListFilter.prototype.saveFiltersToCookie_ = function(sts) {
   if (!this.options['enableCookies']) { return; }
-  var filterStatesById = /** @type  !Array.<!string> */ []; 
-  var filterStatesByHeaderText = /** @type  !Array.<!string> */ [];
+  var filterStatesById = /** @type  {!Array.<!string>} */ [];
+  var filterStatesByHeaderText = /** @type  {!Array.<!string>} */ [];
   var sharedCookieId = null;
   for (var i = 0; i < sts.length; i++) {
     var state = sts[i];
@@ -396,8 +396,8 @@ pn.ui.filter.GenericListFilter.prototype.saveFiltersToCookie_ = function(sts) {
       if (headerText) {
         var fs = new pn.ui.filter.FilterState(
             headerText, state.value, state.idx, state.type);
-        filterStatesByHeaderText = /** @type  !Array.<!string> */ this.addFilterStateToStringArray_(
-            filterStatesByHeaderText, fs);
+        filterStatesByHeaderText = /** @type  {!Array.<!string>} */ (
+            this.addFilterStateToStringArray_(filterStatesByHeaderText, fs));
       }
     }
   }

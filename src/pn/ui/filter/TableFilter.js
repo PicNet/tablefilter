@@ -132,7 +132,7 @@ pn.ui.filter.TableFilter.prototype.initialiseControlCaches = function() {
  */
 pn.ui.filter.TableFilter.prototype.getColumnIndexOfFilter_ = function(f) {
   var td = goog.dom.getAncestorByTagNameAndClass(f, goog.dom.TagName.TD);
-   if (!td || td.length <= 0) { return -1; } 
+  if (!td || td.length <= 0) { return -1; }
   var tr = goog.dom.getAncestorByTagNameAndClass(td, goog.dom.TagName.TR);
   var cells = (tr.getElementsByTagName('td'));
   return goog.array.indexOf(cells, td);
@@ -144,7 +144,7 @@ pn.ui.filter.TableFilter.prototype.buildFiltersRow_ = function() {
   var filterRow = goog.dom.getElementsByTagNameAndClass(
       'tr', 'filters', this.thead_);
   if (filterRow.length > 0) {
-    goog.dom.removeNode(filterRow[0]); 
+    goog.dom.removeNode(filterRow[0]);
   }
   var tr = goog.dom.createDom('tr', { 'class': 'filters' });
   for (var i = 0; i < this.headers_.length; i++) {
