@@ -222,7 +222,7 @@ pn.ui.filter.TableFilter.prototype.getSelectFilter_ = function(colIdx) {
 
   goog.array.forEach(values, function(txt) {
     goog.dom.appendChild(select, goog.dom.createDom('option', {
-      'value': txt.replace('"', '&#034;')
+      'value': txt.replace('"', '&quot;')
     }, txt));
   });
 

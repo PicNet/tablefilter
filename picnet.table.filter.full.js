@@ -15936,7 +15936,7 @@ pn.ui.filter.GenericListFilter.prototype.getNormalisedSearchTokensForState_ =
   if (state === null) { return null; }
   switch (state.type) {
     case 'select-one':
-      return [state.value];
+      return [goog.string.unescapeEntities(state.value)];
     case 'text':
       return this.search_.parseSearchTokens(state.value);
     case 'checkbox':
@@ -16266,7 +16266,7 @@ pn.ui.filter.TableFilter.prototype.getSelectFilter_ = function(colIdx) {
 
   goog.array.forEach(values, function(txt) {
     goog.dom.appendChild(select, goog.dom.createDom('option', {
-      'value': txt.replace('"', '&#034;')
+      'value': txt.replace('"', '&quot;')
     }, txt));
   });
 

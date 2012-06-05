@@ -396,9 +396,8 @@ pn.ui.filter.GenericListFilter.prototype.saveFiltersToCookie_ = function(sts) {
       if (headerText) {
         var fs = new pn.ui.filter.FilterState(
             headerText, state.value, state.idx, state.type);
-        filterStatesByHeaderText = /** @type  {!Array.<!string>} */
-            this.addFilterStateToStringArray_(
-            filterStatesByHeaderText, fs);
+        filterStatesByHeaderText = /** @type  {!Array.<!string>} */ (
+            this.addFilterStateToStringArray_(filterStatesByHeaderText, fs));
       }
     }
   }
@@ -540,7 +539,7 @@ pn.ui.filter.GenericListFilter.prototype.getNormalisedSearchTokensForState_ =
   if (state === null) { return null; }
   switch (state.type) {
     case 'select-one':
-      return [state.value];
+      return [goog.string.unescapeEntities(state.value)];
     case 'text':
       return this.search_.parseSearchTokens(state.value);
     case 'checkbox':
