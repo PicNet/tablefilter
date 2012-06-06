@@ -34,10 +34,10 @@ set CLOSURE_COMPILER=U:\shared\lib\compiler.jar
   --compiler_flags="--define=goog.NATIVE_ARRAY_PROTOTYPES=false" ^
   --output_file=picnet.table.filter.min.js && ^
 %PYTHON27_EXEC% ^
-	%CLOSURE_LIBRARY%closure\bin\build\closurebuilder.py ^
-	--namespace="pn.ui.filter.TableFilter" ^
-  	--namespace="pn.ui.filter.jQueryPlugin" ^
-	--root=%CLOSURE_LIBRARY% ^
-  	--root=src\ ^
-  	--output_mode=script ^
-  	--output_file=picnet.table.filter.full.js
+  %CLOSURE_LIBRARY%closure\bin\build\closurebuilder.py ^
+  --namespace="pn.ui.filter.TableFilter" ^
+    --namespace="pn.ui.filter.jQueryPlugin" ^
+  --root=%CLOSURE_LIBRARY% ^
+    --root=src\ ^
+    --output_mode=script ^
+    --output_file=picnet.table.filter.full.js
