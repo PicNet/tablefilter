@@ -51,14 +51,3 @@ pn.ui.filter.GenericListFilterOptions.prototype['filteringElements'] = null;
 
 /** @type {string} */
 pn.ui.filter.GenericListFilterOptions.prototype['sharedCookieId'] = null;
-
-
-/** @inheritDoc */
-pn.ui.filter.GenericListFilterOptions.prototype.disposeInternal = function() {
-  pn.ui.filter.GenericListFilterOptions.superClass_.disposeInternal.call(this);
-
-  goog.array.forEach(this['additionalFilterTriggers'], goog.dispose);
-  goog.array.forEach(this['clearFiltersControls'], goog.dispose);
-
-  for (var i in this) { delete this[i]; }
-};

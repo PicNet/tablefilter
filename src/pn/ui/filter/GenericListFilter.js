@@ -38,6 +38,7 @@ pn.ui.filter.GenericListFilter = function(input, list, options) {
    * @type {!pn.ui.filter.GenericListFilterOptions}
    */
   this.options = options;
+  this.registerDisposable(this.options);
 
   /**
    * @private
@@ -62,6 +63,7 @@ pn.ui.filter.GenericListFilter = function(input, list, options) {
    * @type {goog.events.EventHandler}
    */
   this.eh_ = new goog.events.EventHandler(this);
+  this.registerDisposable(this.eh_);
 
   /**
    * @private
@@ -622,26 +624,4 @@ pn.ui.filter.GenericListFilter.prototype.doesTextContainText =
 pn.ui.filter.GenericListFilter.prototype.doesTextContainTextImpl =
     function(text, textTokens, exact) {
   return this.search_.doesTextMatchTokens(text, textTokens, exact);
-};
-
-
-/** @inheritDoc */
-pn.ui.filter.GenericListFilter.prototype.disposeInternal = function() {
-  pn.ui.filter.GenericListFilter.superClass_.disposeInternal.call(this);
-
-  goog.dispose(this.list);
-  goog.dispose(this.options);
-  goog.dispose(this.input_);
-  goog.array.forEach(this.listItems, goog.dispose);
-  goog.array.forEach(this.filters, goog.dispose);
-  goog.dispose(this.eh_);
-  goog.dispose(this.search_);
-
-  delete this.list;
-  delete this.options;
-  delete this.input_;
-  delete this.listItems;
-  delete this.filters;
-  delete this.eh_;
-  delete this.search_;
 };

@@ -24,11 +24,3 @@ pn.ui.filter.TableFilterOptions.prototype['selectOptionLabel'] = 'Select...';
 
 /** @type {Element} */
 pn.ui.filter.TableFilterOptions.prototype['frozenHeaderTable'] = null;
-
-
-/** @inheritDoc */
-pn.ui.filter.TableFilterOptions.prototype.disposeInternal = function() {
-  goog.dispose(this['frozenHeaderTable']);
-
-  pn.ui.filter.TableFilterOptions.superClass_.disposeInternal.call(this);
-};

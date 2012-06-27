@@ -285,18 +285,3 @@ pn.ui.filter.TableFilter.prototype.doesElementContainText =
   }
 
 };
-
-
-/** @inheritDoc */
-pn.ui.filter.TableFilter.prototype.disposeInternal = function() {
-  pn.ui.filter.TableFilter.superClass_.disposeInternal.call(this);
-
-  goog.dispose(this.thead_);
-  goog.dispose(this.tbody_);
-  goog.array.forEach(this.headers_, goog.dispose);
-
-  delete this.filterColumnIndexes_;
-  delete this.headers_;
-  delete this.thead_;
-  delete this.tbody_;
-};
