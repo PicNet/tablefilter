@@ -64,7 +64,7 @@ goog.inherits(pn.ui.filter.TableFilter, pn.ui.filter.GenericListFilter);
 pn.ui.filter.TableFilter.grididx_ = 0;
 
 
-/** @inheritDoc */
+/** @override */
 pn.ui.filter.TableFilter.prototype.initialiseFilters = function() {
   this.tbody_ = goog.dom.getElementsByTagNameAndClass(
       'tbody', null, this.list)[0];
@@ -91,7 +91,7 @@ pn.ui.filter.TableFilter.prototype.initialiseFilters = function() {
 };
 
 
-/** @inheritDoc */
+/** @override */
 pn.ui.filter.TableFilter.prototype.initialiseControlCaches = function() {
   var headerRows = /** @type {!Array.<!Element>} */(
       goog.dom.getElementsByTagNameAndClass('tr', null, this.thead_));
@@ -230,7 +230,7 @@ pn.ui.filter.TableFilter.prototype.getSelectFilter_ = function(colIdx) {
 };
 
 
-/** @inheritDoc */
+/** @override */
 pn.ui.filter.TableFilter.prototype.getFilterStates = function() {
   var filterStates = [];
 
@@ -263,7 +263,7 @@ pn.ui.filter.TableFilter.prototype.getFilterStateForFilter = function(filter) {
 };
 
 
-/** @inheritDoc */
+/** @override */
 pn.ui.filter.TableFilter.prototype.doesElementContainText =
     function(state, tr, textTokens) {
   var cells = tr.getElementsByTagName('td');

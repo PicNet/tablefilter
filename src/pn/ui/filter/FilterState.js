@@ -25,7 +25,7 @@ pn.ui.filter.FilterState = function(id, value, idx, type) {
 };
 
 
-/** @inheritDoc */
+/** @override */
 pn.ui.filter.FilterState.prototype.toString = function() {
   return 'id[' + this.id + '] value[' + this.value +
       '] idx[' + this.idx + '] type[' + this.type + ']';
