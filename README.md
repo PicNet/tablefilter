@@ -1,5 +1,8 @@
 
-Download the Table Filter from our new [Repository] (https://github.com/PicNet/picnet_closure_repo)
+
+## PicNet Table Filter have moved to a new [Repository] (https://github.com/PicNet/picnet_closure_repo) ##
+
+Download the Table Filter source [Here] (https://github.com/PicNet/picnet_closure_repo)
 
 Download the [release] (https://github.com/PicNet/picnet_closure_repo/raw/master/tablefilter.zip)
 
